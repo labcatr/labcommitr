@@ -1,4 +1,4 @@
-# Labcommitr
+# `@labcatr/labcommitr`
 
 A solution for building standardized git commits!
 
