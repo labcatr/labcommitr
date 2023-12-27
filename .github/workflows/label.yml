@@ -8,7 +8,7 @@ on:
 jobs:
   triage:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'withastro'
+    if: github.repository_owner == 'labcatr'
     steps:
     - uses: actions/labeler@v4
       with:
