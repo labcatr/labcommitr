@@ -46,6 +46,7 @@ jobs:
           publish: pnpm exec changeset publish
           commit: "[ci] release"
           title: "[ci] release"
+          token: ${{ secrets.VOXEL_GITHUB_TOKEN }}
         env:
           # Needs access to push to main
           GITHUB_TOKEN: ${{ secrets.VOXEL_GITHUB_TOKEN }}
