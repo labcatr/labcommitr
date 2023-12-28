@@ -2,4 +2,4 @@
 "@labcatr/labcommitr": patch
 ---
 
-aaaah
+Formats code

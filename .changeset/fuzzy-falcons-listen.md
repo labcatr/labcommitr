@@ -2,4 +2,4 @@
 "@labcatr/labcommitr": patch
 ---
 
-Test of changeset
+Tests changeset

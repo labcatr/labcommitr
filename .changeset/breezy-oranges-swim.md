@@ -2,4 +2,4 @@
 "@labcatr/labcommitr": patch
 ---
 
-testagain
+Adds tsconfig.json
