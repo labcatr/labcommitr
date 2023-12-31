@@ -1,6 +1,6 @@
 'pr':
 - changed-files:
-  - any-glob-to-any-file: src/**
+  - any-glob-to-any-file: 'src/**'
 'ci':
 - changed-files:
-  - any-glob-to-any-file: .github/**
+  - any-glob-to-any-file: '.github/**'
