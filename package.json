@@ -11,6 +11,7 @@
     "format:code": "prettier -w \"**/*\" --ignore-unknown --cache",
     "version": "changeset version && pnpm install --no-frozen-lockfile && pnpm run format"
   },
+  "type": "module",
   "bin": {
     "labcommitr": "./dist/index.js"
   },
@@ -28,7 +29,8 @@
   "license": "ISC",
   "dependencies": {
     "@changesets/cli": "^2.27.1",
-	"boxen": "^7.1.1",
+    "@types/node": "^20.10.6",
+    "boxen": "^7.1.1",
     "consola": "^3.2.3",
     "magicast": "^0.3.2",
     "prettier": "^3.1.1",
