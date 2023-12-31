@@ -28,6 +28,7 @@
   "license": "ISC",
   "dependencies": {
     "@changesets/cli": "^2.27.1",
+	"boxen": "^7.1.1",
     "consola": "^3.2.3",
     "magicast": "^0.3.2",
     "prettier": "^3.1.1",

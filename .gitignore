@@ -31,3 +31,4 @@ web_modules/
 ### Other
 # Remove rust files for now
 rust-src/
+dist/
