@@ -8,14 +8,19 @@ import path from "path";
 import fs from "fs";
 import consola from "consola";
 
-import Constants from "./util/constants";
+import Constants, { type ConfigPathResolvable } from "./util/constants";
 
-export interface MessageConfiguration {
-	emoji: string;
+export type MessageConfiguration = {
 	message: string;
+	emoji?: string;
 	insertAtIndex?: number;
 	replaceAtIndex?: number;
 }
+
+export type DefaultMessageOptions = {
+	emoji?: string;
+	fileName?: string;
+};
 
 class Configurator {
 	static getNearestConfigurationFilePath(
@@ -24,7 +29,7 @@ class Configurator {
 	): string {
 		const currentDir = fs.readdirSync(currentDirectory);
 		const query = currentDir.find((item) =>
-			Constants.ACCEPTED_CONFIG_FILENAMES.includes(item)
+			([...Constants.ACCEPTED_CONFIG_FILENAMES] as string[]).includes(item)
 		);
 		if (query) return path.join(currentDirectory, query);
 		else if (level <= Constants.CONFIG_FILE_MAX_DEPTH) {
@@ -41,12 +46,31 @@ class Configurator {
 		}
 	}
 
+	static getGitRootPath(currentDirectory: string, level: number = 0) {
+		// TODO: Recursive find for the nearest directory with a .git path
+		// Perhaps make this cacheable? Update at every change?
+		// Maybe ENV Vars?
+		currentDirectory; level;
+	}
+
 	static addMessageConfiguration(
-		filePath: string,
+		configFilePath: ConfigPathResolvable,
 		message: MessageConfiguration
 	): boolean {
 		if (message.insertAtIndex && message.replaceAtIndex)
 			throw new Error("You cannot insert and replace at the same time.");
+
+		loadFile(configFilePath)
+
+		return true;
+	}
+
+	static addDefaultMessageConfiguration(message: string, options: DefaultMessageOptions): boolean {
+		const newMessage = {
+			message,
+			...options,
+		}
+		newMessage
 		return true;
 	}
 }
