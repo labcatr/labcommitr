@@ -1,2 +1,6 @@
 'pr':
-- src/*
+- changed-files:
+  - any-glob-to-any-file: 'src/**'
+'ci':
+- changed-files:
+  - any-glob-to-any-file: '.github/**'
