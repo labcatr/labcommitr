@@ -53,6 +53,8 @@ class Configurator {
 		currentDirectory; level;
 	}
 
+	// TODO: Make these write to a configuration file, and test them.
+	// Also, come up with a general shape for the configuration file.
 	static addMessageConfiguration(
 		configFilePath: ConfigPathResolvable,
 		message: MessageConfiguration
