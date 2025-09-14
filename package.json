@@ -28,13 +28,13 @@
   "author": "Trevor Fox",
   "license": "ISC",
   "dependencies": {
-    "@changesets/cli": "^2.28.1",
-    "@types/node": "^20.17.30",
-    "boxen": "^7.1.1",
+    "@changesets/cli": "^2.29.7",
+    "@types/node": "^24.3.3",
+    "boxen": "^8.0.1",
     "consola": "^3.4.2",
     "magicast": "^0.3.5",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
     "ufo": "^1.6.1"
   },
   "publishConfig": {
