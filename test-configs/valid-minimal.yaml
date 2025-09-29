@@ -1,8 +1,0 @@
-# Valid minimal configuration for testing
-types:
-  - id: "feat"
-    description: "A new feature"
-  - id: "fix"
-    description: "A bug fix"
-  - id: "docs"
-    description: "Documentation changes"

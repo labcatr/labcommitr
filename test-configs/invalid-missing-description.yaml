@@ -1,8 +1,0 @@
-# Invalid configuration - missing descriptions
-types:
-  - id: "feat"
-    # missing description
-  - id: "fix"
-    description: ""  # empty description
-  - id: "docs"
-    description: "Documentation changes"
