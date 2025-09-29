@@ -32,3 +32,11 @@ web_modules/
 # Remove rust files for now
 rust-src/
 dist/
+
+### Development
+# Development progress tracking (internal use only)
+DEVELOPMENT_PROGRESS.md
+REQUIREMENTS.md
+CONFIG_SCHEMA.md
+DEVELOPMENT_GUIDELINES.md
+ARCHITECTURE_DECISIONS.md
