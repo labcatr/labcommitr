@@ -2,12 +2,10 @@
 "@labcatr/labcommitr": minor
 ---
 
-feat: implement async configuration loading system
+feat: add intelligent configuration file discovery
 
-- Add git-prioritized project root detection and monorepo awareness
-- Implement config discovery with permission validation
-- Add robust YAML parsing with detailed, actionable errors
-- Introduce smart caching for performance
-- Expose ConfigLoader class and loadConfig() convenience API
-- Provide built-in defaults and merge utilities
-EOF
+- Tool now automatically finds configuration files in project roots
+- Prioritizes git repositories and supports monorepo structures
+- Provides clear error messages when configuration files have issues
+- Improved performance with smart caching for faster subsequent runs
+- Works reliably across different project structures and environments
