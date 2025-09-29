@@ -19,6 +19,7 @@ import type {
   ConfigError
 } from './types.js';
 import { mergeWithDefaults, createFallbackConfig } from './defaults.js';
+import { ConfigValidator } from './validator.js';
 
 /**
  * Configuration file names to search for (in priority order)
@@ -241,6 +242,29 @@ export class ConfigLoader {
     
     // Parse the YAML file
     const rawConfig = await this.parseYamlFile(configPath);
+    
+    // Validate the parsed configuration
+    const validator = new ConfigValidator();
+    const validationResult = validator.validate(rawConfig);
+    
+    if (!validationResult.valid) {
+      // Transform validation errors into user-friendly ConfigError
+      const errorMessages = validationResult.errors.map(error => 
+        `${error.field}: ${error.message}`
+      ).join('\n');
+      
+      throw new (Error as any)( // TODO: Use proper ConfigError import
+        `Invalid configuration in ${configPath}`,
+        `Configuration validation failed:\n${errorMessages}`,
+        [
+          'Check the configuration file syntax and required fields',
+          'Ensure all commit types have valid "id" and "description" fields',
+          'Verify that type IDs contain only lowercase letters (a-z)',
+          'Run \'lab init\' to generate a valid configuration file'
+        ],
+        configPath
+      );
+    }
     
     // Merge with defaults to create complete configuration
     const processedConfig = mergeWithDefaults(rawConfig);

@@ -15,8 +15,8 @@ export * from './defaults.js';
 // Re-export main configuration loader
 export * from './loader.js';
 
-// Note: validator.js will be implemented in future phases
-// export * from './validator.js';
+// Re-export configuration validator
+export * from './validator.js';
 
 /**
  * Convenience function to create and use a ConfigLoader instance
