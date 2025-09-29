@@ -1,0 +1,8 @@
+# Invalid configuration - bad type ID (uppercase letters)
+types:
+  - id: "FEAT"
+    description: "A new feature"
+  - id: "fix-bug"
+    description: "A bug fix"
+  - id: ""
+    description: "Empty ID"

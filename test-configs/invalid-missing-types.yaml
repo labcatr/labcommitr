@@ -1,0 +1,4 @@
+# Invalid configuration - missing required types field
+version: "1.0"
+config:
+  emoji_enabled: true
