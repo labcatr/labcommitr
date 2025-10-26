@@ -15,9 +15,9 @@ import type {
   RawConfig, 
   ConfigLoadResult, 
   ProjectRoot,
-  CachedConfig,
-  ConfigError
+  CachedConfig
 } from './types.js';
+import { ConfigError } from './types.js';
 import { mergeWithDefaults, createFallbackConfig } from './defaults.js';
 import { ConfigValidator } from './validator.js';
 
@@ -248,19 +248,43 @@ export class ConfigLoader {
     const validationResult = validator.validate(rawConfig);
     
     if (!validationResult.valid) {
-      // Transform validation errors into user-friendly ConfigError
-      const errorMessages = validationResult.errors.map(error => 
-        `${error.field}: ${error.message}`
-      ).join('\n');
+      // Format errors with rich context for user-friendly output
+      const formattedErrors = validationResult.errors.map((error, index) => {
+        const count = index + 1;
+        const location = error.fieldDisplay || error.field;
+        
+        let errorBlock = `\n${count}. ${location}:\n`;
+        errorBlock += `   ${error.userMessage || error.message}\n`;
+        
+        if (error.value !== undefined) {
+          errorBlock += `   Found: ${JSON.stringify(error.value)}\n`;
+        }
+        
+        if (error.issue) {
+          errorBlock += `   Issue: ${error.issue}\n`;
+        }
+        
+        if (error.expectedFormat) {
+          errorBlock += `   Rule: ${error.expectedFormat}\n`;
+        }
+        
+        if (error.examples && error.examples.length > 0) {
+          errorBlock += `   Examples: ${error.examples.join(', ')}\n`;
+        }
+        
+        return errorBlock;
+      }).join('\n');
       
-      throw new (Error as any)( // TODO: Use proper ConfigError import
-        `Invalid configuration in ${configPath}`,
-        `Configuration validation failed:\n${errorMessages}`,
+      const count = validationResult.errors.length;
+      const plural = count === 1 ? 'error' : 'errors';
+      const filename = path.basename(configPath);
+      
+      throw new ConfigError(
+        `Configuration Error: ${filename}`,
+        `Found ${count} validation ${plural}:${formattedErrors}`,
         [
-          'Check the configuration file syntax and required fields',
-          'Ensure all commit types have valid "id" and "description" fields',
-          'Verify that type IDs contain only lowercase letters (a-z)',
-          'Run \'lab init\' to generate a valid configuration file'
+          `Edit ${filename} to fix the issues listed above`,
+          'See documentation for valid field formats: https://github.com/labcatr/labcommitr#config'
         ],
         configPath
       );

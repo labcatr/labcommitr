@@ -144,15 +144,25 @@ export interface ValidationResult {
 
 /**
  * Individual validation error
- * Provides specific information about what failed validation
+ * Provides specific information about what failed validation with rich context
  */
 export interface ValidationError {
-  /** The configuration field that failed validation */
+  /** Technical field path (e.g., "types[0].id") */
   field: string;
-  /** Human-readable error message */
+  /** User-friendly field description (e.g., "Commit type #1 → ID field") */
+  fieldDisplay: string;
+  /** Technical error message for developers */
   message: string;
-  /** The actual value that failed validation */
+  /** User-friendly error explanation */
+  userMessage: string;
+  /** The actual problematic value */
   value?: unknown;
+  /** What format/type was expected */
+  expectedFormat?: string;
+  /** Array of valid example values */
+  examples?: string[];
+  /** Specific issue identified (e.g., "Contains dash (-)") */
+  issue?: string;
 }
 
 /**
