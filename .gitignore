@@ -24,14 +24,52 @@ jspm_packages/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
-# TypeScript cache
+# TypeScript build artifacts
 *.tsbuildinfo
+dist/
+build/
+out/
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Testing
+.test-temp/
+test-results/
+
+# npm/yarn/pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
 
 
 ### Other
 # Remove rust files for now
 rust-src/
-dist/
 
 ### Development
 # Development progress tracking (internal use only)
