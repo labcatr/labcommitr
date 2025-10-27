@@ -17,6 +17,9 @@ importers:
       boxen:
         specifier: ^8.0.1
         version: 8.0.1
+      commander:
+        specifier: ^14.0.2
+        version: 14.0.2
       consola:
         specifier: ^3.4.2
         version: 3.4.2
@@ -228,6 +231,10 @@ packages:
   cli-boxes@3.0.0:
     resolution: {integrity: sha512-/lzGpEWL/8PfI0BmBOPRwp0c/wFNX1RdUML3jK/RcSBA9T8mZDdQpqYBKtCFTOfQbwPqWEOpjqW+Fnayc0969g==}
     engines: {node: '>=10'}
+
+  commander@14.0.2:
+    resolution: {integrity: sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==}
+    engines: {node: '>=20'}
 
   consola@3.4.2:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
@@ -858,6 +865,8 @@ snapshots:
   ci-info@3.9.0: {}
 
   cli-boxes@3.0.0: {}
+
+  commander@14.0.2: {}
 
   consola@3.4.2: {}
 

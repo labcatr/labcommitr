@@ -13,7 +13,8 @@
   },
   "type": "module",
   "bin": {
-    "labcommitr": "./dist/index.js"
+    "labcommitr": "./dist/index.js",
+    "lab": "./dist/index.js"
   },
   "keywords": [
     "git",
@@ -31,6 +32,7 @@
     "@changesets/cli": "^2.29.7",
     "@types/node": "^24.3.3",
     "boxen": "^8.0.1",
+    "commander": "^14.0.2",
     "consola": "^3.4.2",
     "cosmiconfig": "^9.0.0",
     "js-yaml": "^4.1.0",
