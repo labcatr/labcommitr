@@ -9,25 +9,33 @@
  */
 
 import { select, multiselect, isCancel } from "@clack/prompts";
-import pc from "picocolors";
+import {
+  labelColors,
+  textColors,
+  success,
+  info,
+  attention,
+  highlight,
+} from "./colors.js";
 
 /**
  * Create compact color-coded label
  * Labels are 7 characters wide (6 chars + padding) for alignment
+ * Uses bright ANSI 256 colors for high visibility
  */
 function label(
   text: string,
   color: "magenta" | "cyan" | "blue" | "yellow" | "green",
 ): string {
   const colorFn = {
-    magenta: pc.bgMagenta,
-    cyan: pc.bgCyan,
-    blue: pc.bgBlue,
-    yellow: pc.bgYellow,
-    green: pc.bgGreen,
+    magenta: labelColors.bgBrightMagenta,
+    cyan: labelColors.bgBrightCyan,
+    blue: labelColors.bgBrightBlue,
+    yellow: labelColors.bgBrightYellow,
+    green: labelColors.bgBrightGreen,
   }[color];
 
-  return colorFn(pc.black(` ${text.padEnd(6)} `));
+  return colorFn(` ${text.padEnd(6)} `);
 }
 
 /**
@@ -157,38 +165,72 @@ export async function promptScopeTypes(
 }
 
 /**
- * Display configuration summary
- * Shows user choices before config generation
+ * Display completed prompts in compact form (Astro pattern)
+ * Shows what the user selected after @clack/prompts clears itself
+ * This simulates keeping prompts visible on screen
  */
-export function displaySummary(config: {
+export function displayCompletedPrompts(config: {
   preset: string;
   emoji: boolean;
   scope: string;
 }): void {
-  console.log("\n✓ Configuration ready!\n");
-  console.log(`  ■ Preset: ${config.preset}`);
-  console.log(`  ■ Emoji: ${config.emoji ? "Enabled" : "Disabled"}`);
-  console.log(`  ■ Scope: ${config.scope}`);
-  console.log(`  ■ Types: feat, fix, docs, style, refactor, test, chore\n`);
+  console.log(
+    `${label("preset", "magenta")}  ${textColors.brightCyan(config.preset)}`,
+  );
+  console.log(
+    `${label("emoji", "cyan")}  ${textColors.brightCyan(config.emoji ? "Yes" : "No")}`,
+  );
+  console.log(
+    `${label("scope", "blue")}  ${textColors.brightCyan(config.scope)}`,
+  );
+  console.log(); // Extra line
+}
+
+/**
+ * Display processing steps as compact checklist (Astro-style)
+ * Shows what's happening during config generation
+ * Each step executes its task and displays success when complete
+ */
+export async function displayProcessingSteps(
+  steps: Array<{ message: string; task: () => Promise<void> }>,
+): Promise<void> {
+  for (const step of steps) {
+    // Show pending state with spinning indicator
+    process.stdout.write(`  ${textColors.brightCyan("◐")} ${step.message}...`);
+
+    // Execute task
+    await step.task();
+
+    // Clear line and show success checkmark
+    process.stdout.write("\r"); // Return to start of line
+    console.log(`  ${success("✔")} ${step.message}`);
+  }
+  console.log(); // Extra newline after all steps
 }
 
 /**
  * Display configuration file write result
  */
 export function displayConfigResult(filename: string): void {
-  console.log(`${label("config", "green")}  Writing ${pc.cyan(filename)}`);
-  console.log("          Done\n");
+  console.log(`${label("config", "green")}  Writing ${highlight(filename)}`);
+  console.log(`          ${success("Done")}\n`);
 }
 
 /**
  * Display next steps after successful setup
  */
 export function displayNextSteps(): void {
-  console.log("✓ Ready to commit!\n");
-  console.log(`${label("next", "cyan")}  Get started with these commands:\n`);
-  console.log("         lab config show      View your configuration");
-  console.log("         lab commit           Create your first commit\n");
+  console.log(`${success("✓ Ready to commit!")}\n`);
   console.log(
-    "         Customize anytime by editing .labcommitr.config.yaml\n",
+    `${label("next", "yellow")}  ${attention("Get started with these commands:")}\n`,
+  );
+  console.log(
+    `         ${textColors.brightCyan("lab config show")}      View your configuration`,
+  );
+  console.log(
+    `         ${textColors.brightCyan("lab commit")}           Create your first commit\n`,
+  );
+  console.log(
+    `         ${textColors.brightYellow("Customize anytime by editing .labcommitr.config.yaml")}\n`,
   );
 }

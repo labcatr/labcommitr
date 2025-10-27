@@ -5,11 +5,12 @@
  * a project-specific configuration file. Provides preset selection,
  * customization options, and animated mascot for enhanced UX.
  *
- * Flow:
- * 1. Intro animation (Clef introduces tool)
+ * Flow (Astro-style):
+ * 1. Intro animation (Clef introduces tool, then clears)
  * 2. User prompts (preset, emoji, scope choices)
- * 3. Processing animation (config generation)
- * 4. Outro animation (Clef celebrates)
+ * 3. Summary display (show choices, then clear)
+ * 4. Processing checklist (compact steps, stays visible)
+ * 5. Outro animation (Clef appears below, stays on screen)
  */
 
 import { Command } from "commander";
@@ -21,9 +22,7 @@ import {
   promptEmoji,
   promptScope,
   promptScopeTypes,
-  displaySummary,
-  displayConfigResult,
-  displayNextSteps,
+  displayProcessingSteps,
 } from "./prompts.js";
 import { buildConfig, getPreset } from "../../../lib/presets/index.js";
 import { generateConfigFile } from "./config-generator.js";
@@ -98,6 +97,7 @@ async function initAction(options: {
     }
 
     // Prompts: Clean labels, no cat
+    // Note: @clack/prompts clears each prompt after selection (their default behavior)
     const presetId = options.preset || (await promptPreset());
     const preset = getPreset(presetId);
 
@@ -110,15 +110,11 @@ async function initAction(options: {
       scopeRequiredFor = await promptScopeTypes(preset.types);
     }
 
-    // Display summary
-    displaySummary({
-      preset: preset.name,
-      emoji: emojiEnabled,
-      scope: scopeMode,
-    });
-
     // Small pause before processing
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // Add spacing before processing section
+    console.log();
 
     // Build config from choices
     const config = buildConfig(presetId, {
@@ -127,29 +123,47 @@ async function initAction(options: {
       scopeRequiredFor,
     });
 
-    // Processing: Clef reappears
-    await clef.processing("Creating your configuration...meoww!", async () => {
-      await generateConfigFile(config, projectRoot);
-      // Simulate some processing time for animation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    });
-    // Screen is now completely clear
+    // Show title "Labcommitr initializing..."
+    console.log("Labcommitr initializing...\n");
 
-    // Display result
-    displayConfigResult(".labcommitr.config.yaml");
+    // Show compact processing steps (Astro pattern: checklist stays visible)
+    await displayProcessingSteps([
+      {
+        message: "Writing .labcommitr.config.yaml",
+        task: async () => {
+          await generateConfigFile(config, projectRoot);
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        },
+      },
+      {
+        message: "Validating configuration",
+        task: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+        },
+      },
+      {
+        message: "Setup complete",
+        task: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+        },
+      },
+    ]);
 
-    // Small pause
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Change title to "Labcommitr initialized!" in green
+    // Move up to overwrite the "initializing..." title
+    // Current position is after the blank line following "Setup complete"
+    // Need to go up: 1 blank line + 3 steps (each with ✔) + 1 blank line after title + 1 title line = 6 lines
+    process.stdout.write("\x1B[6A"); // Move up 6 lines to title
+    process.stdout.write("\r"); // Move to start of line
+    process.stdout.write("\x1B[K"); // Clear the line
+    console.log("\x1B[32mLabcommitr initialized!\x1B[0m"); // Green text
+    process.stdout.write("\x1B[5B"); // Move back down 5 lines (title + blank + 3 steps)
 
-    // Display next steps
-    displayNextSteps();
+    // Processing list stays visible (no clear)
 
-    // Small pause before finale
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Outro: Clef celebrates and exits
+    // Outro: Clef appears below processing list (Astro pattern)
     await clef.outro();
-    // Screen is now completely clear - back to terminal
+    // Cat and message stay on screen - done!
   } catch (error) {
     // Ensure cursor is visible on error
     clef.stop();

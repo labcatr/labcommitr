@@ -14,7 +14,7 @@
  */
 
 import { setTimeout as sleep } from "timers/promises";
-import pc from "picocolors";
+import { textColors, success, attention } from "./colors.js";
 
 interface AnimationCapabilities {
   supportsAnimation: boolean;
@@ -120,7 +120,8 @@ class Clef {
     for (let i = 0; i < text.length; i++) {
       // Reposition cursor for each character (handles concurrent animations)
       process.stdout.write(`\x1B[${y};${x + i}H`);
-      process.stdout.write(pc.cyan(text[i]));
+      // Use normal white for clean, readable intro text
+      process.stdout.write(textColors.white(text[i]));
       await sleep(delay);
     }
   }
@@ -279,7 +280,7 @@ class Clef {
     // Show typing animation
     this.clearScreen();
     console.log(this.frames.typing);
-    console.log(pc.dim(`      ${message}`));
+    console.log(`      ${attention(message)}`);
 
     // Execute actual task
     await task();
@@ -295,37 +296,38 @@ class Clef {
 
   /**
    * Outro sequence
-   * Character celebrates completion and waves goodbye
-   * Duration: approximately 4 seconds
+   * Cat and text display side by side using normal console output
+   * Astro Houston-style: stays on screen as final message (no clear, no walk off)
+   * Duration: approximately 2 seconds
    */
   async outro(): Promise<void> {
     if (!this.caps.supportsAnimation) {
       // Static fallback
       console.log(this.frames.waving);
-      console.log("Happy committing!\n");
-      await sleep(2000);
-      return;
+      console.log("You're all set! Happy committing!");
+      return; // No clear - message stays visible
     }
 
-    // Walk in quickly
-    await this.walk(0, 10, 600);
+    // Split cat into lines for side-by-side display
+    const catLines = this.frames.waving.split("\n");
+    const message = `   ${textColors.white("You're all set! Happy committing!")}`;
 
-    // Show celebration
-    this.clearScreen();
-    console.log(this.frames.celebrate);
-    await sleep(1000);
+    // Display cat and message side by side (line by line)
+    for (let i = 0; i < catLines.length; i++) {
+      if (i === 2) {
+        // Show message on the middle line of the cat (vertically centered)
+        console.log(catLines[i] + message);
+      } else {
+        console.log(catLines[i]);
+      }
+    }
 
-    // Wave goodbye
-    this.clearScreen();
-    console.log(this.frames.waving);
-    console.log(pc.cyan("      Happy committing!\n"));
-    await sleep(2000);
+    console.log(); // Extra line at end
 
-    // Walk off
-    await this.walk(10, this.caps.terminalWidth, 800);
+    // Small pause to let user see the message
+    await sleep(1500);
 
-    // Final complete clear
-    this.clearScreen();
+    // Done - cat and message remain visible (no clear, no cursor hide)
   }
 
   /**
