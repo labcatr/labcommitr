@@ -5,7 +5,6 @@
  * Makes imports cleaner and provides single location for command overview.
  */
 
-export { configCommand } from './config.js';
-export { initCommand } from './init.js';
-export { commitCommand } from './commit.js';
-
+export { configCommand } from "./config.js";
+export { initCommand } from "./init/index.js";
+export { commitCommand } from "./commit.js";
