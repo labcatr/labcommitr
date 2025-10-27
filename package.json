@@ -30,6 +30,7 @@
   "license": "ISC",
   "dependencies": {
     "@changesets/cli": "^2.29.7",
+    "@clack/prompts": "^0.11.0",
     "@types/node": "^24.3.3",
     "boxen": "^8.0.1",
     "commander": "^14.0.2",
@@ -37,6 +38,7 @@
     "cosmiconfig": "^9.0.0",
     "js-yaml": "^4.1.0",
     "magicast": "^0.3.5",
+    "picocolors": "^1.1.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
     "ufo": "^1.6.1"
