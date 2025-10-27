@@ -11,8 +11,8 @@
  * - Unknown errors: Unexpected exceptions
  */
 
-import { Logger } from '../../lib/logger.js';
-import { ConfigError } from '../../lib/config/types.js';
+import { Logger } from "../../lib/logger.js";
+import { ConfigError } from "../../lib/config/types.js";
 
 /**
  * Handle CLI errors with appropriate formatting
@@ -30,7 +30,7 @@ export function handleCliError(error: unknown): void {
     }
 
     if (error.solutions && error.solutions.length > 0) {
-      console.error('\n💡 Solutions:');
+      console.error("\n💡 Solutions:");
       error.solutions.forEach((solution, index) => {
         console.error(`  ${index + 1}. ${solution}`);
       });
@@ -41,7 +41,7 @@ export function handleCliError(error: unknown): void {
 
   if (error instanceof Error) {
     // Standard errors
-    if (error.name === 'CommanderError') {
+    if (error.name === "CommanderError") {
       // Commander.js validation errors (handled by Commander itself)
       return;
     }
@@ -50,7 +50,7 @@ export function handleCliError(error: unknown): void {
     Logger.error(`Error: ${error.message}`);
 
     if (process.env.DEBUG) {
-      console.error('\nStack trace:');
+      console.error("\nStack trace:");
       console.error(error.stack);
     }
 
@@ -58,7 +58,6 @@ export function handleCliError(error: unknown): void {
   }
 
   // Unknown error type
-  Logger.error('An unexpected error occurred');
+  Logger.error("An unexpected error occurred");
   console.error(error);
 }
-

@@ -13,8 +13,8 @@
  * - Global error handling for uncaught exceptions
  */
 
-import { program } from './cli/program.js';
-import { handleCliError } from './cli/utils/error-handler.js';
+import { program } from "./cli/program.js";
+import { handleCliError } from "./cli/utils/error-handler.js";
 
 /**
  * Main CLI execution

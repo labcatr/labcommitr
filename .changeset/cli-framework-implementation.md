@@ -11,4 +11,3 @@ feat: add working CLI framework with basic commands
 - Interactive help system guides users through available commands
 - Clear error messages when invalid commands are used
 - Foundation ready for init and commit commands in upcoming releases
-

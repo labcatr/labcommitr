@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for labcommitr configuration system
- * 
+ *
  * This file defines the core types used throughout the config loading system,
  * ensuring type safety and clear contracts between components.
  */
@@ -75,15 +75,15 @@ export interface RawConfig {
   /** Schema version for future compatibility */
   version?: string;
   /** Basic configuration settings */
-  config?: Partial<LabcommitrConfig['config']>;
+  config?: Partial<LabcommitrConfig["config"]>;
   /** Commit message formatting rules */
-  format?: Partial<LabcommitrConfig['format']>;
+  format?: Partial<LabcommitrConfig["format"]>;
   /** Array of available commit types - REQUIRED FIELD */
   types: CommitType[];
   /** Validation rules for commit messages */
-  validation?: Partial<LabcommitrConfig['validation']>;
+  validation?: Partial<LabcommitrConfig["validation"]>;
   /** Advanced configuration options */
-  advanced?: Partial<LabcommitrConfig['advanced']>;
+  advanced?: Partial<LabcommitrConfig["advanced"]>;
 }
 
 /**
@@ -94,7 +94,7 @@ export interface ConfigLoadResult {
   /** The fully processed configuration */
   config: LabcommitrConfig;
   /** Source of the configuration */
-  source: 'project' | 'global' | 'defaults';
+  source: "project" | "global" | "defaults";
   /** Absolute path to config file (if loaded from file) */
   path?: string;
   /** Timestamp when config was loaded */
@@ -111,7 +111,7 @@ export interface ProjectRoot {
   /** Absolute path to the project root directory */
   path: string;
   /** Type of marker that identified this as project root */
-  markerType: 'git' | 'package.json' | 'filesystem-root';
+  markerType: "git" | "package.json" | "filesystem-root";
   /** Whether this appears to be a monorepo structure */
   isMonorepo: boolean;
   /** Paths to detected subprojects (if any) */
@@ -172,7 +172,7 @@ export interface ValidationError {
 export class ConfigError extends Error {
   /**
    * Creates a new configuration error with user-friendly messaging
-   * 
+   *
    * @param message - Primary error message (what went wrong)
    * @param details - Technical details about the error
    * @param solutions - Array of actionable solutions for the user
@@ -182,33 +182,33 @@ export class ConfigError extends Error {
     message: string,
     public readonly details: string,
     public readonly solutions: string[],
-    public readonly filePath?: string
+    public readonly filePath?: string,
   ) {
     super(message);
-    this.name = 'ConfigError';
-    
+    this.name = "ConfigError";
+
     // Ensure proper prototype chain for instanceof checks
     Object.setPrototypeOf(this, ConfigError.prototype);
   }
-  
+
   /**
    * Formats the error for display to users
    * Includes the message, details, and actionable solutions
    */
   public formatForUser(): string {
     let output = `❌ ${this.message}\n`;
-    
+
     if (this.details) {
       output += `\nDetails: ${this.details}\n`;
     }
-    
+
     if (this.solutions.length > 0) {
       output += `\nSolutions:\n`;
-      this.solutions.forEach(solution => {
+      this.solutions.forEach((solution) => {
         output += `  ${solution}\n`;
       });
     }
-    
+
     return output;
   }
 }

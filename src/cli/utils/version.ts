@@ -5,9 +5,9 @@
  * Provides consistent version formatting across the CLI.
  */
 
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 /**
  * Get package version from package.json
@@ -16,8 +16,8 @@ import { dirname, join } from 'path';
 export function getVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const packageJsonPath = join(__dirname, '../../../package.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  const packageJsonPath = join(__dirname, "../../../package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
   return packageJson.version;
 }
 
@@ -28,8 +28,7 @@ export function getVersion(): string {
 export function getFullVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const packageJsonPath = join(__dirname, '../../../package.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  const packageJsonPath = join(__dirname, "../../../package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
   return `${packageJson.name} v${packageJson.version}`;
 }
-

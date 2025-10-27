@@ -14,19 +14,19 @@
  * Current Status: Placeholder for Step 4
  */
 
-import { Command } from 'commander';
-import { Logger } from '../../lib/logger.js';
+import { Command } from "commander";
+import { Logger } from "../../lib/logger.js";
 
 /**
  * Commit command
  */
-export const commitCommand = new Command('commit')
-  .description('Create a standardized commit (interactive)')
-  .alias('c')
-  .option('-t, --type <type>', 'Commit type (feat, fix, etc.)')
-  .option('-s, --scope <scope>', 'Commit scope')
-  .option('-m, --message <message>', 'Commit subject')
-  .option('--no-verify', 'Bypass git hooks')
+export const commitCommand = new Command("commit")
+  .description("Create a standardized commit (interactive)")
+  .alias("c")
+  .option("-t, --type <type>", "Commit type (feat, fix, etc.)")
+  .option("-s, --scope <scope>", "Commit scope")
+  .option("-m, --message <message>", "Commit subject")
+  .option("--no-verify", "Bypass git hooks")
   .action(commitAction);
 
 /**
@@ -39,13 +39,13 @@ async function commitAction(options: {
   message?: string;
   verify?: boolean;
 }): Promise<void> {
-  Logger.info('Commit command - Coming in Step 6!');
-  Logger.info('\nPlanned features:');
-  console.log('  • Interactive type selection from your config');
-  console.log('  • Optional scope and description prompts');
-  console.log('  • Automatic emoji detection and fallback');
-  console.log('  • Git commit execution with formatted message');
-  console.log('  • Validation against configured rules');
+  Logger.info("Commit command - Coming in Step 6!");
+  Logger.info("\nPlanned features:");
+  console.log("  • Interactive type selection from your config");
+  console.log("  • Optional scope and description prompts");
+  console.log("  • Automatic emoji detection and fallback");
+  console.log("  • Git commit execution with formatted message");
+  console.log("  • Validation against configured rules");
 
   if (options.type) {
     Logger.info(`\nYou specified type: ${options.type}`);
@@ -60,7 +60,6 @@ async function commitAction(options: {
   }
 
   if (options.verify === false) {
-    Logger.warn('Git hooks will be bypassed when implemented');
+    Logger.warn("Git hooks will be bypassed when implemented");
   }
 }
-
