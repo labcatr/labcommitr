@@ -12,4 +12,3 @@ feat: add interactive init command with Clef mascot
 - Automatic YAML configuration file generation with validation
 - Non-intrusive design with clean labels and compact spacing
 - Graceful degradation for terminals without animation support
-
