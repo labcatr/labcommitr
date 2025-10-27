@@ -105,8 +105,71 @@ class Clef {
   }
 
   /**
+   * Type text character by character at specific position
+   * Creates typewriter effect for introducing Clef
+   * Repositions cursor for each character to handle concurrent animations
+   */
+  private async typeText(
+    text: string,
+    x: number,
+    y: number,
+    delay: number = 40,
+  ): Promise<void> {
+    // Type each character with explicit positioning
+    // This ensures text appears correctly even while cat legs animate
+    for (let i = 0; i < text.length; i++) {
+      // Reposition cursor for each character (handles concurrent animations)
+      process.stdout.write(`\x1B[${y};${x + i}H`);
+      process.stdout.write(pc.cyan(text[i]));
+      await sleep(delay);
+    }
+  }
+
+  /**
+   * Clear a specific line from startX to end of line
+   */
+  private clearLine(y: number, startX: number): void {
+    process.stdout.write(`\x1B[${y};${startX}H`);
+    process.stdout.write("\x1B[K"); // Clear from cursor to end of line
+  }
+
+  /**
+   * Animate legs in place without horizontal movement
+   * Continues until shouldContinue callback returns false
+   */
+  private async animateLegs(
+    x: number,
+    shouldContinue: () => boolean,
+  ): Promise<void> {
+    const frames = [this.frames.walk1, this.frames.walk2];
+    let frameIndex = 0;
+
+    while (shouldContinue()) {
+      this.renderFrame(frames[frameIndex % 2], x);
+      frameIndex++;
+      await sleep(200); // Leg animation speed
+    }
+  }
+
+  /**
+   * Fade out cat Houston-style
+   * Erases cat from bottom to top for smooth disappearance
+   */
+  private async fadeOut(x: number): Promise<void> {
+    const catLines = this.frames.standing.split("\n");
+
+    // Erase from bottom to top
+    for (let i = catLines.length - 1; i >= 0; i--) {
+      process.stdout.write(`\x1B[${5 + i};${x}H`);
+      process.stdout.write(" ".repeat(20)); // Clear line with spaces
+      await sleep(80);
+    }
+  }
+
+  /**
    * Animate character walking from start to end position
    * Creates smooth horizontal movement using frame interpolation
+   * Used for processing and outro sequences
    */
   private async walk(
     startX: number,
@@ -137,8 +200,9 @@ class Clef {
 
   /**
    * Introduction sequence
-   * Character walks in from left, displays greeting, then exits
-   * Duration: approximately 3 seconds
+   * Cat appears stationary with animated legs, text types beside it
+   * Houston-style: text types out, clears, new text types, then fades
+   * Duration: approximately 5 seconds
    */
   async intro(): Promise<void> {
     if (!this.caps.supportsAnimation) {
@@ -150,22 +214,49 @@ class Clef {
       return;
     }
 
-    // Walk in from left side
-    await this.walk(0, 10, 1000);
-
-    // Display introduction message
+    this.hideCursor();
     this.clearScreen();
-    console.log(this.frames.standing);
-    console.log(pc.cyan("      Hey there! My name is Clef!"));
-    console.log(pc.cyan("      Let me help you get started...meoww!\n"));
 
-    await sleep(2000);
+    const catX = 1; // Match @clack/prompts left margin
+    const catWidth = 18; // Actual visible width of cat ASCII art (rightmost char)
+    const textX = catX + catWidth + 1; // 1 space padding for symmetry
+    const textY = 7; // Vertically centered with cat (cat starts at line 5, 4 lines tall)
 
-    // Walk off to right side
-    await this.walk(10, this.caps.terminalWidth, 800);
+    // Messages to type
+    const messages = [
+      "Hey there! My name is Clef!",
+      "Let me help you get started...meoww!",
+    ];
 
-    // Complete clear for next section
+    // Start leg animation in background (non-blocking)
+    let isAnimating = true;
+    const animationPromise = this.animateLegs(catX, () => isAnimating);
+
+    // Type first message
+    await this.typeText(messages[0], textX, textY);
+    await sleep(1000);
+
+    // Clear first message
+    this.clearLine(textY, textX);
+    await sleep(300);
+
+    // Type second message
+    await this.typeText(messages[1], textX, textY);
+    await sleep(1200);
+
+    // Stop leg animation
+    isAnimating = false;
+    await animationPromise;
+
+    // Fade out cat Houston-style
+    await this.fadeOut(catX);
+
+    // Small pause before clearing
+    await sleep(200);
+
+    // Clear screen for prompts
     this.clearScreen();
+    this.showCursor();
   }
 
   /**
