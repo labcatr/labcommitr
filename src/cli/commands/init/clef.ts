@@ -224,7 +224,7 @@ class Clef {
     const catX = 1; // Left edge of terminal (no indentation)
     const catWidth = 18; // Actual visible width of cat ASCII art (rightmost char)
     const textX = catX + catWidth + 1; // 1 space padding on either side
-    const textY = 3; // Vertically centered with cat (cat is 4 lines tall, centered at line 3)
+    const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
 
     // Messages to type
     const messages = [
