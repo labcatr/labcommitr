@@ -33,12 +33,12 @@ class Clef {
 
   // Raw ASCII art frames (unprocessed)
   private readonly rawFrames = {
-    standing: `  /\\_/\\  \n ( ^.^ ) \n /|   | \n  (_|   |_)`,
-    walk1: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n  (_|  _|)`,
-    walk2: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n  (|_  |_)`,
-    typing: `  /\\_/\\  \n ( -.- ) \n /|⌨ | \n  (_|_|_)`,
-    celebrate: `  /\\_/\\  \n ( ^ω^ ) \n  | |   \n  /   \\ `,
-    waving: `  /\\_/\\  \n ( ^.^ )~ \n /|   | \n  (_|   |_)`,
+    standing: `  /\\_/\\  \n ( ^.^ ) \n /|   | \n(|_   |_)`,
+    walk1: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n(_|   _|)`,
+    walk2: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n(|_   |_)`,
+    typing: `  /\\_/\\  \n ( -.- ) \n /|⌨ | \n(_|__|_)`,
+    celebrate: `  /\\_/\\  \n ( ^ω^ ) \n  | |   \n/   \\ `,
+    waving: `  /\\_/\\  \n ( ^.^ )~ \n /|   | \n(|_   |_)`,
   };
 
   // Normalized frames (uniform dimensions)
