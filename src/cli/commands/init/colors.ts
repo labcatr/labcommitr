@@ -18,34 +18,14 @@
  */
 export const labelColors = {
   /**
-   * Bright Magenta - Vibrant, energetic, attention-grabbing
-   * Perfect for the first step (preset selection)
+   * Uniform Light Blue (#77c0f7) - Consistent label color
+   * Used for all step labels for unified appearance
    */
-  bgBrightMagenta: (text: string) => `\x1b[48;5;201m\x1b[30m${text}\x1b[0m`,
-
-  /**
-   * Bright Cyan - Fresh, modern, tech-forward
-   * Great for emoji and next steps
-   */
-  bgBrightCyan: (text: string) => `\x1b[48;5;51m\x1b[30m${text}\x1b[0m`,
-
-  /**
-   * Bright Blue - Clear, professional, confident
-   * Ideal for scope and types configuration
-   */
-  bgBrightBlue: (text: string) => `\x1b[48;5;39m\x1b[30m${text}\x1b[0m`,
-
-  /**
-   * Bright Yellow - Attention-grabbing, action-oriented
-   * Perfect for call-to-action (next steps)
-   */
-  bgBrightYellow: (text: string) => `\x1b[48;5;226m\x1b[30m${text}\x1b[0m`,
-
-  /**
-   * Bright Green - Success, completion, positive
-   * Excellent for config result and success messages
-   */
-  bgBrightGreen: (text: string) => `\x1b[48;5;46m\x1b[30m${text}\x1b[0m`,
+  bgBrightMagenta: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
+  bgBrightCyan: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
+  bgBrightBlue: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
+  bgBrightYellow: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
+  bgBrightGreen: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
 };
 
 /**
