@@ -94,14 +94,14 @@ class Clef {
   /**
    * Render ASCII art frame at specific horizontal position
    * Uses absolute cursor positioning for each line
-   * With 2 lines of padding above the cat
+   * No padding above the cat - starts at line 1
    */
   private renderFrame(frame: string, x: number): void {
     const lines = frame.split("\n");
     lines.forEach((line, idx) => {
       // Move cursor to position (row, column)
-      // Start at line 3 (2 lines of padding + cat starts at idx 0)
-      process.stdout.write(`\x1B[${idx + 3};${x}H`);
+      // Start at line 1 (no padding)
+      process.stdout.write(`\x1B[${idx + 1};${x}H`);
       process.stdout.write(line);
     });
   }
@@ -162,9 +162,9 @@ class Clef {
     const catLines = this.frames.standing.split("\n");
 
     // Erase from bottom to top
-    // Cat starts at line 3 (2 lines of padding), so fade from line 6 to line 3
+    // Cat starts at line 1 (no padding), so fade from line 4 to line 1
     for (let i = catLines.length - 1; i >= 0; i--) {
-      process.stdout.write(`\x1B[${3 + i};${x}H`);
+      process.stdout.write(`\x1B[${1 + i};${x}H`);
       process.stdout.write(" ".repeat(20)); // Clear line with spaces
       await sleep(80);
     }
@@ -224,7 +224,7 @@ class Clef {
     const catX = 1; // Left edge of terminal (no indentation)
     const catWidth = 18; // Actual visible width of cat ASCII art (rightmost char)
     const textX = catX + catWidth + 1; // 1 space padding on either side
-    const textY = 5; // Vertically centered with cat (cat is 4 lines tall, centered at ~line 5)
+    const textY = 3; // Vertically centered with cat (cat is 4 lines tall, centered at line 3)
 
     // Messages to type
     const messages = [
