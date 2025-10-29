@@ -54,7 +54,7 @@ function handleCancel(value: unknown): void {
  */
 export async function promptPreset(): Promise<string> {
   const preset = await select({
-    message: `${label("preset", "magenta")}  Which commit style fits your project?`,
+    message: `${label("preset", "magenta")}  ${textColors.pureWhite("Which commit style fits your project?")}`,
     options: [
       {
         value: "conventional",
@@ -88,7 +88,7 @@ export async function promptPreset(): Promise<string> {
  */
 export async function promptEmoji(): Promise<boolean> {
   const emoji = await select({
-    message: `${label("emoji", "cyan")}  Enable emoji support?`,
+    message: `${label("emoji", "cyan")}  ${textColors.pureWhite("Enable emoji support?")}`,
     options: [
       {
         value: false,
@@ -114,7 +114,7 @@ export async function promptScope(): Promise<
   "optional" | "selective" | "always" | "never"
 > {
   const scope = await select({
-    message: `${label("scope", "blue")}  How should scopes work?`,
+    message: `${label("scope", "blue")}  ${textColors.pureWhite("How should scopes work?")}`,
     options: [
       {
         value: "optional",
@@ -151,7 +151,7 @@ export async function promptScopeTypes(
   types: Array<{ id: string; description: string }>,
 ): Promise<string[]> {
   const selected = await multiselect({
-    message: `${label("types", "blue")}  Which types require a scope?`,
+    message: `${label("types", "blue")}  ${textColors.pureWhite("Which types require a scope?")}`,
     options: types.map((type) => ({
       value: type.id,
       label: type.id,
