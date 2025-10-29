@@ -221,7 +221,7 @@ class Clef {
     this.hideCursor();
     this.clearScreen();
 
-    const catX = 1; // Left edge (no leading spaces in ASCII art)
+    const catX = 0; // Start at column 0 (accounts for leading space in ASCII art)
     const catWidth = 7; // Actual visible width of cat ASCII art (max width is 7 chars for the face)
     const textX = catX + catWidth + 1; // 1 space padding on either side
     const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
