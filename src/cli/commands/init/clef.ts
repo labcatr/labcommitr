@@ -221,7 +221,7 @@ class Clef {
     this.hideCursor();
     this.clearScreen();
 
-    const catX = 1; // Left edge of terminal (no indentation)
+    const catX = 8; // Account for 7 leading spaces in ASCII art + 1 for terminal edge
     const catWidth = 18; // Actual visible width of cat ASCII art (rightmost char)
     const textX = catX + catWidth + 1; // 1 space padding on either side
     const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
