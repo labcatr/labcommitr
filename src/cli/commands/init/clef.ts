@@ -376,16 +376,18 @@ class Clef {
     const catLines = this.frames.waving.split("\n");
     const catX = 1; // Start at column 1 (adds 1 column of left padding)
     const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
-    const labelY = 3; // Line 2 of cat output - label "Clef:"
-    const messageY = 4; // Line 3 of cat output - message text
+
+    // Calculate positions: cat is at lines 2-5 (1 line padding + 4 cat lines)
+    // Label and message go right after cat (lines 6-7)
+    const labelY = 6; // Line right after cat
+    const messageY = 7; // Line below label
 
     // Display cat lines
     for (let i = 0; i < catLines.length; i++) {
       console.log(catLines[i]);
     }
 
-    // Display label and message below cat
-    console.log(); // Blank line after cat
+    // Display label
     process.stdout.write(`\x1B[${labelY};${textX}H`);
     process.stdout.write(textColors.labelBlue("Clef: "));
 
