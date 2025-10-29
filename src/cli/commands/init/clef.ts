@@ -31,14 +31,14 @@ class Clef {
   private caps: AnimationCapabilities;
   private currentX: number = 0;
 
-  // ASCII art frames for different states (uniform width, no leading/trailing spaces)
+  // ASCII art frames for different states (uniform 8-char width)
   private readonly frames = {
-    standing: `/\\_/\\  \n( ^.^ ) \n/|   | \n(_|   |_)`,
-    walk1: `/\\_/\\  \n( ^.^ ) \n/|   |\\ \n(_|  _|)`,
-    walk2: `/\\_/\\  \n( ^.^ ) \n/|   |\\ \n(|_  |_)`,
-    typing: `/\\_/\\  \n( -.- ) \n/|⌨ | \n(_|_|_)`,
-    celebrate: `/\\_/\\  \n( ^ω^ ) \n | |  \n/   \\`,
-    waving: `/\\_/\\  \n( ^.^ )~ \n/|   | \n(_|   |_)`,
+    standing: `/\\_/\\   \n( ^.^ ) \n/|   | \n(_|   |_)`,
+    walk1: `/\\_/\\   \n( ^.^ ) \n/|   |\\ \n(_|  _|) `,
+    walk2: `/\\_/\\   \n( ^.^ ) \n/|   |\\ \n(|_  |_) `,
+    typing: `/\\_/\\   \n( -.- ) \n/|⌨ | \n(_|_|_) `,
+    celebrate: `/\\_/\\   \n( ^ω^ ) \n | |   \n/   \\  `,
+    waving: `/\\_/\\   \n( ^.^ )~ \n/|   | \n(_|   |_)`,
   };
 
   constructor() {
