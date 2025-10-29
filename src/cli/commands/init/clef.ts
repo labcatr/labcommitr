@@ -180,8 +180,7 @@ class Clef {
     for (let i = 0; i < text.length; i++) {
       // Reposition cursor for each character (handles concurrent animations)
       process.stdout.write(`\x1B[${y};${x + i}H`);
-      // Use normal white for clean, readable intro text
-      process.stdout.write(textColors.white(text[i]));
+      process.stdout.write(textColors.pureWhite(text[i]));
       await sleep(delay);
     }
   }
@@ -281,7 +280,8 @@ class Clef {
 
     const catX = 1; // Start at column 1 (adds 1 column of left padding)
     const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
-    const textY = 3; // Align text with cat's face (line 3 with 1-line top padding, face is at idx 1 + 2)
+    const labelY = 3; // Line 2 of cat output - label "Clef:"
+    const messageY = 4; // Line 3 of cat output - message text
 
     // Messages to type
     const messages = [
@@ -293,16 +293,20 @@ class Clef {
     let isAnimating = true;
     const animationPromise = this.animateLegs(catX, () => isAnimating);
 
-    // Type first message
-    await this.typeText(messages[0], textX, textY);
+    // Write static label "Clef:" in blue
+    process.stdout.write(`\x1B[${labelY};${textX}H`);
+    process.stdout.write(textColors.labelBlue("Clef: "));
+
+    // Type first message on line below
+    await this.typeText(messages[0], textX, messageY);
     await sleep(1000);
 
-    // Clear first message
-    this.clearLine(textY, textX);
+    // Clear message only (keep label)
+    this.clearLine(messageY, textX);
     await sleep(300);
 
     // Type second message
-    await this.typeText(messages[1], textX, textY);
+    await this.typeText(messages[1], textX, messageY);
     await sleep(1200);
 
     // Stop leg animation

@@ -88,6 +88,18 @@ export const textColors = {
    * Perfect for intro/outro messages (normal weight, not bold)
    */
   white: (text: string) => `\x1b[37m${text}\x1b[0m`,
+
+  /**
+   * Pure White (#FFF) - Maximum brightness, perfect white
+   * For typed message text that needs to be crystal clear
+   */
+  pureWhite: (text: string) => `\x1b[38;5;231m${text}\x1b[0m`,
+
+  /**
+   * Label Blue (#547fef) - Character name/speaker label color
+   * Perfect for "Clef:" label
+   */
+  labelBlue: (text: string) => `\x1b[38;5;75m${text}\x1b[0m`,
 };
 
 /**
