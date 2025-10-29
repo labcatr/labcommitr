@@ -372,23 +372,51 @@ class Clef {
       return; // No clear - message stays visible
     }
 
-    // Use renderFrame to position cat (starts at line 2 with 1-line padding)
+    // Add spacing before outro
+    console.log();
+
+    // Get cat position - appears after processing checklist
     const catX = 1; // Start at column 1 (adds 1 column of left padding)
-    this.renderFrame(this.frames.waving, catX);
+    const catLines = this.frames.waving.split("\n");
 
-    const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
-    const labelY = 3; // Line 2 of cat (face line) - label "Clef:"
-    const messageY = 4; // Line 3 of cat - message text
+    // Display cat starting at the next available line
+    // We use getCursorPosition to find where we are
+    // For simplicity, just use console.log which naturally goes to the next line
+    for (let i = 0; i < catLines.length; i++) {
+      console.log(catLines[i]);
+    }
 
-    // Display label
-    process.stdout.write(`\x1B[${labelY};${textX}H`);
+    // Display label and message on lines next to cat (beside cat's face)
+    // Cat is now on lines: current+1, current+2, current+3, current+4
+    // Label should be beside line 2 (face line)
+    const textX = catX + this.frameWidth + 1; // 1 space padding after cat
+
+    // Use relative positioning: we're currently after displaying the cat
+    // Need to go back up to position text beside the cat
+    const linesToMove = catLines.length; // Move up by cat height
+    const faceLineRelativeToCat = 1; // Face is on the 2nd line of cat (idx 1)
+
+    // Calculate absolute line numbers
+    // After console.log, cursor is at line: current + cat height + 1
+    // We need to write at: current + faceLineRelativeToCat (i.e., 2nd line of cat display)
+    // So we need to move up by: (cat height - faceLineRelativeToCat + 1)
+    const linesUp = catLines.length - faceLineRelativeToCat + 1;
+    const messageLinesUp = catLines.length - faceLineRelativeToCat;
+
+    // Move up to cat's face line and display label
+    process.stdout.write(`\x1B[${linesUp}A`); // Move up
+    process.stdout.write(`\r${" ".repeat(textX)}`); // Clear to textX position
     process.stdout.write(textColors.labelBlue("Clef: "));
 
-    // Display message in pure white
+    // Move up to next line and display message
+    process.stdout.write(`\x1B[${linesUp}A`); // Move up one more line
+    process.stdout.write(`\r${" ".repeat(textX)}`); // Clear to textX position
     const message = "You're all set! Happy committing!";
-    process.stdout.write(`\x1B[${messageY};${textX}H`);
     process.stdout.write(textColors.pureWhite(message));
 
+    // Move cursor back down to end
+    process.stdout.write(`\x1B[${linesUp}B`); // Move down
+    process.stdout.write(`\x1B[${linesUp}B`); // Move down again
     console.log(); // Extra line at end
 
     // Small pause to let user see the message
