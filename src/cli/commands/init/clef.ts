@@ -31,14 +31,14 @@ class Clef {
   private caps: AnimationCapabilities;
   private currentX: number = 0;
 
-  // ASCII art frames for different states
+  // ASCII art frames for different states (no leading/trailing spaces)
   private readonly frames = {
-    standing: `       /\\_/\\     \n      ( ^.^ )    \n      /|   |     \n     (_|   |_)   `,
-    walk1: `       /\\_/\\     \n      ( ^.^ )    \n      /|   |\\    \n     (_|  _|)   `,
-    walk2: `       /\\_/\\     \n      ( ^.^ )    \n      /|   |\\    \n     (|_  |_)   `,
-    typing: `       /\\_/\\     \n      ( -.- )    \n      /|⌨ |     \n     (_|_|_)   `,
-    celebrate: `       /\\_/\\     \n      ( ^ω^ )    \n       | |       \n      /   \\      `,
-    waving: `       /\\_/\\     \n      ( ^.^ )~   \n      /|   |     \n     (_|   |_)   `,
+    standing: `/\\_/\\\n( ^.^ )\n/|   |\n(_|   |_)`,
+    walk1: `/\\_/\\\n( ^.^ )\n/|   |\\\n(_|  _|)`,
+    walk2: `/\\_/\\\n( ^.^ )\n/|   |\\\n(|_  |_)`,
+    typing: `/\\_/\\\n( -.- )\n/|⌨ |\n(_|_|_)`,
+    celebrate: `/\\_/\\\n( ^ω^ )\n | | \n/   \\`,
+    waving: `/\\_/\\\n( ^.^ )~\n/|   |\n(_|   |_)`,
   };
 
   constructor() {
@@ -221,8 +221,8 @@ class Clef {
     this.hideCursor();
     this.clearScreen();
 
-    const catX = 8; // Account for 7 leading spaces in ASCII art + 1 for terminal edge
-    const catWidth = 18; // Actual visible width of cat ASCII art (rightmost char)
+    const catX = 1; // Left edge (no leading spaces in ASCII art)
+    const catWidth = 5; // Actual visible width of cat ASCII art (max width is 5 chars)
     const textX = catX + catWidth + 1; // 1 space padding on either side
     const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
 
