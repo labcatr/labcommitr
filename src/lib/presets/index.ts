@@ -70,8 +70,11 @@ export function buildConfig(
   presetId: string,
   customizations: {
     emoji?: boolean;
+    // Scope prompt removed in init; default to optional unless provided
     scope?: "optional" | "selective" | "always" | "never";
     scopeRequiredFor?: string[];
+    // Git integration
+    autoStage?: boolean;
   },
 ): LabcommitrConfig {
   const preset = getPreset(presetId);
@@ -93,6 +96,7 @@ export function buildConfig(
       force_emoji_detection: null,
     },
     format: {
+      // Template is determined by style; emoji is handled at render time
       template: "{type}({scope}): {subject}",
       subject_max_length: 50,
     },
@@ -106,8 +110,9 @@ export function buildConfig(
     advanced: {
       aliases: {},
       git: {
-        auto_stage: false,
-        sign_commits: false,
+        auto_stage: customizations.autoStage ?? false,
+        // Security best-practice: enable signed commits by default
+        sign_commits: true,
       },
     },
   };

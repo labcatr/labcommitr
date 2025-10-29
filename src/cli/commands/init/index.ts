@@ -7,7 +7,7 @@
  *
  * Flow (Astro-style):
  * 1. Intro animation (Clef introduces tool, then clears)
- * 2. User prompts (preset, emoji, scope choices)
+ * 2. User prompts (preset, emoji, auto-stage)
  * 3. Summary display (show choices, then clear)
  * 4. Processing checklist (compact steps, stays visible)
  * 5. Outro animation (Clef appears below, stays on screen)
@@ -20,8 +20,7 @@ import { clef } from "./clef.js";
 import {
   promptPreset,
   promptEmoji,
-  promptScope,
-  promptScopeTypes,
+  promptAutoStage,
   displayProcessingSteps,
 } from "./prompts.js";
 import { buildConfig, getPreset } from "../../../lib/presets/index.js";
@@ -99,16 +98,10 @@ async function initAction(options: {
     // Prompts: Clean labels, no cat
     // Note: @clack/prompts clears each prompt after selection (their default behavior)
     const presetId = options.preset || (await promptPreset());
-    const preset = getPreset(presetId);
+    getPreset(presetId);
 
     const emojiEnabled = await promptEmoji();
-    const scopeMode = await promptScope();
-
-    // If selective scope mode, ask which types require scopes
-    let scopeRequiredFor: string[] = [];
-    if (scopeMode === "selective") {
-      scopeRequiredFor = await promptScopeTypes(preset.types);
-    }
+    const autoStage = await promptAutoStage();
 
     // Small pause before processing
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -119,8 +112,8 @@ async function initAction(options: {
     // Build config from choices
     const config = buildConfig(presetId, {
       emoji: emojiEnabled,
-      scope: scopeMode,
-      scopeRequiredFor,
+      scope: "optional",
+      autoStage,
     });
 
     // Show title "Labcommitr initializing..."

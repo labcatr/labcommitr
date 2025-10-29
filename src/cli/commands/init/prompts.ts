@@ -58,23 +58,23 @@ export async function promptPreset(): Promise<string> {
     options: [
       {
         value: "conventional",
-        label: "Conventional Commits",
-        hint: "Industry-standard format (recommended)",
+        label:
+          "Conventional Commits (Recommended): Popular across open-source and personal projects.\n       e.g., fix(dining): add security to treat container",
       },
       {
         value: "gitmoji",
-        label: "Gitmoji Style",
-        hint: "Visual commits with emojis",
+        label:
+          "Gitmoji Style: Visual commits with emojis for better scannability.\n       e.g., 🐛 fix(dining): add security to treat container",
       },
       {
         value: "angular",
-        label: "Angular Convention",
-        hint: "Strict enterprise format",
+        label:
+          "Angular Convention: Strict format used by Angular and enterprise teams.\n       e.g., fix(snacks): add security to treat container",
       },
       {
         value: "minimal",
-        label: "Minimal Setup",
-        hint: "Start basic, customize later",
+        label:
+          "Minimal Setup: Start with basics, customize everything yourself later.\n       e.g., fix: add security to treat container",
       },
     ],
   });
@@ -88,23 +88,48 @@ export async function promptPreset(): Promise<string> {
  */
 export async function promptEmoji(): Promise<boolean> {
   const emoji = await select({
-    message: `${label("emoji", "cyan")}  ${textColors.pureWhite("Enable emoji support?")}`,
+    message: `${label("emoji", "cyan")}  ${textColors.pureWhite("Enable emoji support in commits?")}`,
     options: [
       {
         value: false,
-        label: "No",
-        hint: "Text-only (recommended)",
+        label: "No (Recommended)",
+        hint: "Text-only commits",
       },
       {
         value: true,
         label: "Yes",
-        hint: "Visual emojis in commits",
+        hint: "Include emojis for better visibility",
       },
     ],
   });
 
   handleCancel(emoji);
   return emoji as boolean;
+}
+
+/**
+ * Prompt for auto-stage behavior
+ * When enabled, stages modified/deleted tracked files automatically (git add -u)
+ */
+export async function promptAutoStage(): Promise<boolean> {
+  const autoStage = await select({
+    message: `${label("stage", "yellow")}  ${textColors.pureWhite("Stage files automatically?")}`,
+    options: [
+      {
+        value: false,
+        label: "No (Recommended)",
+        hint: "I'll stage files manually with 'git add'",
+      },
+      {
+        value: true,
+        label: "Yes",
+        hint: "Auto-stage modified files before committing",
+      },
+    ],
+  });
+
+  handleCancel(autoStage);
+  return autoStage as boolean;
 }
 
 /**
