@@ -160,7 +160,8 @@ class Clef {
       // Move cursor to position (row, column)
       // Start at line 2 (1 line padding above)
       process.stdout.write(`\x1B[${idx + 2};${x}H`);
-      process.stdout.write(line);
+      // Make cat white for better visibility
+      process.stdout.write(textColors.pureWhite(line));
     });
   }
 
@@ -385,17 +386,21 @@ class Clef {
     for (let i = 0; i < catLines.length; i++) {
       if (i === 1) {
         // Line 1: Face line - display "Clef:" label
-        console.log(catLines[i] + "  " + textColors.labelBlue("Clef:"));
+        console.log(
+          textColors.pureWhite(catLines[i]) +
+            "  " +
+            textColors.labelBlue("Clef:"),
+        );
       } else if (i === 2) {
         // Line 2: Body line - display message text
         console.log(
-          catLines[i] +
+          textColors.pureWhite(catLines[i]) +
             "  " +
             textColors.pureWhite("You're all set! Happy committing!"),
         );
       } else {
-        // Other lines: just the cat
-        console.log(catLines[i]);
+        // Other lines: just the cat in white
+        console.log(textColors.pureWhite(catLines[i]));
       }
     }
 
