@@ -33,12 +33,12 @@ class Clef {
 
   // Raw ASCII art frames (unprocessed)
   private readonly rawFrames = {
-    standing: ` /\\_/\\   \n ( ^.^ ) \n /|   | \n (_|   |_)`,
-    walk1: ` /\\_/\\   \n ( ^.^ ) \n /|   |\\ \n (_|  _|)`,
-    walk2: ` /\\_/\\   \n ( ^.^ ) \n /|   |\\ \n (|_  |_)`,
-    typing: ` /\\_/\\   \n ( -.- ) \n /|⌨ | \n (_|_|_)`,
-    celebrate: ` /\\_/\\   \n ( ^ω^ ) \n  | |   \n /   \\ `,
-    waving: ` /\\_/\\   \n ( ^.^ )~ \n /|   | \n (_|   |_)`,
+    standing: `  /\\_/\\  \n ( ^.^ ) \n /|   | \n (_|   |_)`,
+    walk1: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n (_|  _|)`,
+    walk2: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n (|_  |_)`,
+    typing: `  /\\_/\\  \n ( -.- ) \n /|⌨ | \n (_|_|_)`,
+    celebrate: `  /\\_/\\  \n ( ^ω^ ) \n  | |   \n /   \\ `,
+    waving: `  /\\_/\\  \n ( ^.^ )~ \n /|   | \n (_|   |_)`,
   };
 
   // Normalized frames (uniform dimensions)
@@ -51,6 +51,19 @@ class Clef {
   constructor() {
     this.caps = this.detectCapabilities();
     this.normalizeFrames(); // Initializes this.frames
+
+    // Debug: Log normalized frame dimensions
+    if (process.env.LABCOMMITR_DEBUG) {
+      console.log(
+        `Normalized frame dimensions: ${this.frameWidth} x ${this.frameHeight}`,
+      );
+      console.log(
+        "Standing frame lines:",
+        this.frames.standing
+          .split("\n")
+          .map((l, i) => `${i}: [${l}] (len=${l.length})`),
+      );
+    }
   }
 
   /**
