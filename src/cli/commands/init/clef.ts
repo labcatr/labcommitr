@@ -31,8 +31,8 @@ class Clef {
   private caps: AnimationCapabilities;
   private currentX: number = 0;
 
-  // ASCII art frames for different states (uniform 8-char width)
-  private readonly frames = {
+  // Raw ASCII art frames (unprocessed)
+  private readonly rawFrames = {
     standing: ` /\\_/\\   \n ( ^.^ ) \n /|   | \n (_|   |_)`,
     walk1: ` /\\_/\\   \n ( ^.^ ) \n /|   |\\ \n (_|  _|)`,
     walk2: ` /\\_/\\   \n ( ^.^ ) \n /|   |\\ \n (|_  |_)`,
@@ -41,8 +41,53 @@ class Clef {
     waving: ` /\\_/\\   \n ( ^.^ )~ \n /|   | \n (_|   |_)`,
   };
 
+  // Normalized frames (uniform dimensions)
+  private frames!: typeof this.rawFrames;
+
+  // Frame dimensions after normalization
+  private frameWidth = 0;
+  private frameHeight = 0;
+
   constructor() {
     this.caps = this.detectCapabilities();
+    this.normalizeFrames(); // Initializes this.frames
+  }
+
+  /**
+   * Normalize all frames to uniform width and height
+   * Ensures consistent alignment across all animation frames
+   * Critical for terminal compatibility with different fonts/dimensions
+   */
+  private normalizeFrames(): void {
+    // Find maximum width across all frames
+    const allLines = Object.values(this.rawFrames).flatMap((frame: string) =>
+      frame.split("\n"),
+    );
+    this.frameWidth = Math.max(...allLines.map((line: string) => line.length));
+
+    // Find maximum height across all frames
+    this.frameHeight = Math.max(
+      ...Object.values(this.rawFrames).map(
+        (frame: string) => frame.split("\n").length,
+      ),
+    );
+
+    // Normalize each frame to maximum dimensions
+    const keyedFrames: Partial<typeof this.rawFrames> = {};
+    (Object.keys(this.rawFrames) as Array<keyof typeof this.rawFrames>).forEach(
+      (key) => {
+        const lines = this.rawFrames[key].split("\n");
+        const normalized = lines.map((line: string) =>
+          line.padEnd(this.frameWidth, " "),
+        );
+        // Pad height if necessary
+        while (normalized.length < this.frameHeight) {
+          normalized.push(" ".repeat(this.frameWidth));
+        }
+        keyedFrames[key] = normalized.join("\n");
+      },
+    );
+    this.frames = keyedFrames as typeof this.rawFrames;
   }
 
   /**
@@ -222,8 +267,7 @@ class Clef {
     this.clearScreen();
 
     const catX = 0; // Start at column 0 (accounts for leading space in ASCII art)
-    const catWidth = 7; // Actual visible width of cat ASCII art (max width is 7 chars for the face)
-    const textX = catX + catWidth + 1; // 1 space padding on either side
+    const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
     const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
 
     // Messages to type
