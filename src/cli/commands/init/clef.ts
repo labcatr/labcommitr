@@ -372,19 +372,22 @@ class Clef {
       return; // No clear - message stays visible
     }
 
-    // Split cat into lines for side-by-side display
-    const catLines = this.frames.waving.split("\n");
+    // Use renderFrame to position cat (starts at line 2 with 1-line padding)
+    const catX = 1; // Start at column 1 (adds 1 column of left padding)
+    this.renderFrame(this.frames.waving, catX);
 
-    // Display cat lines
-    for (let i = 0; i < catLines.length; i++) {
-      console.log(catLines[i]);
-    }
+    const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
+    const labelY = 3; // Line 2 of cat (face line) - label "Clef:"
+    const messageY = 4; // Line 3 of cat - message text
 
-    // Display label and message below cat
-    console.log(
-      textColors.labelBlue("Clef: ") +
-        textColors.pureWhite("You're all set! Happy committing!"),
-    );
+    // Display label
+    process.stdout.write(`\x1B[${labelY};${textX}H`);
+    process.stdout.write(textColors.labelBlue("Clef: "));
+
+    // Display message in pure white
+    const message = "You're all set! Happy committing!";
+    process.stdout.write(`\x1B[${messageY};${textX}H`);
+    process.stdout.write(textColors.pureWhite(message));
 
     console.log(); // Extra line at end
 
