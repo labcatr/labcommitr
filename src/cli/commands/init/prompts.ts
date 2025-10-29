@@ -59,22 +59,17 @@ export async function promptPreset(): Promise<string> {
       {
         value: "conventional",
         label:
-          "Conventional Commits (Recommended): Popular across open-source and personal projects.\n       e.g., fix(dining): add security to treat container",
-      },
-      {
-        value: "gitmoji",
-        label:
-          "Gitmoji Style: Visual commits with emojis for better scannability.\n       e.g., 🐛 fix(dining): add security to treat container",
+          "Conventional Commits (Recommended): Popular across open-source and personal projects.\n       e.g., fix(dining): add security to treat container\n",
       },
       {
         value: "angular",
         label:
-          "Angular Convention: Strict format used by Angular and enterprise teams.\n       e.g., fix(snacks): add security to treat container",
+          "\nAngular Convention: Strict format used by Angular and enterprise teams.\n       e.g., fix(snacks): add security to treat container\n",
       },
       {
         value: "minimal",
         label:
-          "Minimal Setup: Start with basics, customize everything yourself later.\n       e.g., fix: add security to treat container",
+          "\nMinimal Setup: Start with basics, customize everything yourself later.\n       e.g., fix: add security to treat container\n",
       },
     ],
   });
