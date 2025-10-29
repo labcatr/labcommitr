@@ -99,7 +99,7 @@ class Clef {
     const lines = frame.split("\n");
     lines.forEach((line, idx) => {
       // Move cursor to position (row, column)
-      process.stdout.write(`\x1B[${idx + 5};${x}H`);
+      process.stdout.write(`\x1B[${idx + 1};${x}H`);
       process.stdout.write(line);
     });
   }
