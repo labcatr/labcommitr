@@ -152,14 +152,14 @@ class Clef {
   /**
    * Render ASCII art frame at specific horizontal position
    * Uses absolute cursor positioning for each line
-   * No padding above the cat - starts at line 1
+   * Adds 1 line of padding above the cat (starts at line 2)
    */
   private renderFrame(frame: string, x: number): void {
     const lines = frame.split("\n");
     lines.forEach((line, idx) => {
       // Move cursor to position (row, column)
-      // Start at line 1 (no padding)
-      process.stdout.write(`\x1B[${idx + 1};${x}H`);
+      // Start at line 2 (1 line padding above)
+      process.stdout.write(`\x1B[${idx + 2};${x}H`);
       process.stdout.write(line);
     });
   }
@@ -220,9 +220,9 @@ class Clef {
     const catLines = this.frames.standing.split("\n");
 
     // Erase from bottom to top
-    // Cat starts at line 1 (no padding), so fade from line 4 to line 1
+    // Cat starts at line 2 (1 line padding), so fade from line 5 to line 2
     for (let i = catLines.length - 1; i >= 0; i--) {
-      process.stdout.write(`\x1B[${1 + i};${x}H`);
+      process.stdout.write(`\x1B[${2 + i};${x}H`);
       process.stdout.write(" ".repeat(20)); // Clear line with spaces
       await sleep(80);
     }
@@ -279,9 +279,9 @@ class Clef {
     this.hideCursor();
     this.clearScreen();
 
-    const catX = 0; // Start at column 0 (accounts for leading space in ASCII art)
+    const catX = 1; // Start at column 1 (adds 1 column of left padding)
     const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
-    const textY = 2; // Align text with cat's face (line 2 of cat is the face/eyes)
+    const textY = 3; // Align text with cat's face (line 3 with 1-line top padding, face is at idx 1 + 2)
 
     // Messages to type
     const messages = [
