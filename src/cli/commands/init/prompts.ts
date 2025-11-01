@@ -50,28 +50,41 @@ function handleCancel(value: unknown): void {
 }
 
 /**
+ * Preset option data structure
+ * Keeps descriptions for future use while labels only show examples
+ */
+const PRESET_OPTIONS = [
+  {
+    value: "conventional",
+    name: "Conventional Commits (Recommended)",
+    description: "Popular across open-source and personal projects.",
+    example: "fix(dining): add security to treat container",
+  },
+  {
+    value: "angular",
+    name: "Angular Convention",
+    description: "Strict format used by Angular and enterprise teams.",
+    example: "fix(snacks): add security to treat container",
+  },
+  {
+    value: "minimal",
+    name: "Minimal Setup",
+    description: "Start with basics, customize everything yourself later.",
+    example: "fix: add security to treat container",
+  },
+] as const;
+
+/**
  * Prompt for commit style preset selection
  */
 export async function promptPreset(): Promise<string> {
   const preset = await select({
     message: `${label("preset", "magenta")}  ${textColors.pureWhite("Which commit style fits your project?")}`,
-    options: [
-      {
-        value: "conventional",
-        label:
-          "Conventional Commits (Recommended): Popular across open-source and personal projects.\n       e.g., fix(dining): add security to treat container\n",
-      },
-      {
-        value: "angular",
-        label:
-          "\nAngular Convention: Strict format used by Angular and enterprise teams.\n       e.g., fix(snacks): add security to treat container\n",
-      },
-      {
-        value: "minimal",
-        label:
-          "\nMinimal Setup: Start with basics, customize everything yourself later.\n       e.g., fix: add security to treat container\n",
-      },
-    ],
+    options: PRESET_OPTIONS.map((option) => ({
+      value: option.value,
+      label: `${option.name} - e.g., ${option.example}`,
+      // description is kept in PRESET_OPTIONS for future use
+    })),
   });
 
   handleCancel(preset);

@@ -5,23 +5,32 @@
 
 version: "1.0"
 config:
-  emoji_enabled: false
+  emoji_enabled: true
   force_emoji_detection: null
 format:
   template: "{type}({scope}): {subject}"
   subject_max_length: 50
 types:
   - id: feat
-    description: New feature
+    description: A new feature for the user
     emoji: ✨
   - id: fix
-    description: Bug fix
+    description: A bug fix for the user
     emoji: 🐛
   - id: docs
-    description: Documentation
+    description: Documentation changes
     emoji: 📚
+  - id: style
+    description: Code style changes (formatting, semicolons, etc.)
+    emoji: 💄
+  - id: refactor
+    description: Code refactoring without changing functionality
+    emoji: ♻️
+  - id: test
+    description: Adding or updating tests
+    emoji: 🧪
   - id: chore
-    description: Maintenance
+    description: Maintenance tasks, build changes, etc.
     emoji: 🔧
 validation:
   require_scope_for: []
@@ -32,4 +41,4 @@ advanced:
   aliases: {}
   git:
     auto_stage: false
-    sign_commits: false
+    sign_commits: true
