@@ -20,8 +20,9 @@ import {
 
 /**
  * Create compact color-coded label
- * Labels are 7 characters wide (6 chars + padding) for alignment
+ * Labels are 8 characters wide (6 chars + 2 padding spaces) for alignment
  * Uses bright ANSI 256 colors for high visibility
+ * Text is centered within the label
  */
 function label(
   text: string,
@@ -35,7 +36,18 @@ function label(
     green: labelColors.bgBrightGreen,
   }[color];
 
-  return colorFn(` ${text.padEnd(6)} `);
+  // Center text within 6-character width
+  // For visual centering: when padding is odd, put extra space on LEFT for better balance
+  const width = 6;
+  const textLength = Math.min(text.length, width); // Cap at width
+  const padding = width - textLength;
+  // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
+  // For even padding (2, 4, 6...), floor/ceil both work the same
+  const leftPad = Math.ceil(padding / 2);
+  const rightPad = padding - leftPad;
+  const centeredText = " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
+
+  return colorFn(` ${centeredText} `);
 }
 
 /**
