@@ -18,7 +18,7 @@ import { editInEditor, detectEditor } from "./editor.js";
 
 /**
  * Create compact color-coded label
- * Labels are 8 characters wide (6 chars + 2 padding spaces) for alignment
+ * Labels are 9 characters wide (7 chars + 2 padding spaces) for alignment
  * Text is centered within the label
  */
 function label(
@@ -33,9 +33,9 @@ function label(
     green: labelColors.bgBrightGreen,
   }[color];
 
-  // Center text within 6-character width
+  // Center text within 7-character width (accommodates "subject" and "preview")
   // For visual centering: when padding is odd, put extra space on LEFT for better balance
-  const width = 6;
+  const width = 7;
   const textLength = Math.min(text.length, width); // Cap at width
   const padding = width - textLength;
   // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
@@ -367,6 +367,9 @@ export async function promptBody(
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
   const preference = bodyConfig.editor_preference;
+  
+  // Explicitly check if body is required (handle potential type coercion)
+  const isRequired = bodyConfig.required === true;
 
   // If editor preference is "editor" but no editor available, fall back to inline
   if (preference === "editor" && !editorAvailable) {
@@ -376,17 +379,17 @@ export async function promptBody(
     );
     console.log();
     // Fall through to inline input
-  } else if (preference === "editor" && editorAvailable && !bodyConfig.required) {
+  } else if (preference === "editor" && editorAvailable && !isRequired) {
     // Optional body with editor preference - use editor directly
     const edited = await promptBodyWithEditor(config, "");
     return edited || undefined;
-  } else if (preference === "editor" && editorAvailable && bodyConfig.required) {
+  } else if (preference === "editor" && editorAvailable && isRequired) {
     // Required body with editor preference - use editor with validation loop
     return await promptBodyRequiredWithEditor(config);
   }
 
   // Inline input path
-  if (!bodyConfig.required) {
+  if (!isRequired) {
     // Optional body - offer choice if editor available and preference allows
     if (editorAvailable && preference === "auto") {
       const inputMethod = await select({
@@ -455,7 +458,7 @@ export async function promptBody(
       if (editorAvailable && (preference === "auto" || preference === "inline")) {
         const inputMethod = await select({
           message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
+            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           options: [
           {
@@ -483,7 +486,7 @@ export async function promptBody(
         // Inline input
         body = await text({
           message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
+            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
           validate: (value) => {
@@ -501,7 +504,7 @@ export async function promptBody(
       // No editor choice, just inline
       body = await text({
         message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
+          `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         )}`,
         placeholder: "",
         validate: (value) => {
@@ -577,7 +580,7 @@ async function promptBodyRequiredWithEditor(
         // Fall back to inline for required body
         const inlineBody = await text({
           message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
+            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
           validate: (value) => {

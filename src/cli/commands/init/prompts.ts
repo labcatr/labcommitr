@@ -20,7 +20,7 @@ import {
 
 /**
  * Create compact color-coded label
- * Labels are 8 characters wide (6 chars + 2 padding spaces) for alignment
+ * Labels are 9 characters wide (7 chars + 2 padding spaces) for alignment
  * Uses bright ANSI 256 colors for high visibility
  * Text is centered within the label
  */
@@ -36,9 +36,9 @@ function label(
     green: labelColors.bgBrightGreen,
   }[color];
 
-  // Center text within 6-character width
+  // Center text within 7-character width (accommodates all current labels)
   // For visual centering: when padding is odd, put extra space on LEFT for better balance
-  const width = 6;
+  const width = 7;
   const textLength = Math.min(text.length, width); // Cap at width
   const padding = width - textLength;
   // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
@@ -150,6 +150,31 @@ export async function promptAutoStage(): Promise<boolean> {
 
   handleCancel(autoStage);
   return autoStage as boolean;
+}
+
+/**
+ * Prompt for commit body requirement
+ * When enabled, commit body becomes required during commit creation
+ */
+export async function promptBodyRequired(): Promise<boolean> {
+  const bodyRequired = await select({
+    message: `${label("body", "green")}  ${textColors.pureWhite("Require commit body?")}`,
+    options: [
+      {
+        value: true,
+        label: "Yes (Recommended)",
+        hint: "Always require body with commit",
+      },
+      {
+        value: false,
+        label: "No",
+        hint: "Body is optional",
+      },
+    ],
+  });
+
+  handleCancel(bodyRequired);
+  return bodyRequired as boolean;
 }
 
 /**
