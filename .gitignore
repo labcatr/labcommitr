@@ -73,7 +73,8 @@ Thumbs.db
 rust-src/
 
 ### Documentation
-# Ignore all .md files except README.md and .changeset/*.md (local reference only)
+# Ignore all .md files except README.md, CHANGELOG.md, and .changeset/*.md (local reference only)
 *.md
 !README.md
+!CHANGELOG.md
 !.changeset/*.md
