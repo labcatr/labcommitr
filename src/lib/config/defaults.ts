@@ -35,6 +35,17 @@ export const DEFAULT_CONFIG: LabcommitrConfig = {
     template: "{emoji}{type}({scope}): {subject}",
     // Standard 50-character limit for commit subjects (git best practice)
     subject_max_length: 50,
+    // Commit message body configuration
+    body: {
+      // Body is optional by default (user can provide if needed)
+      required: false,
+      // No minimum length when body is provided (user decides)
+      min_length: 0,
+      // No maximum length (unlimited)
+      max_length: null,
+      // Auto-detect best method (inline for short, editor for long)
+      editor_preference: "auto",
+    },
   },
 
   /** Empty types array - must be provided by user or preset */
@@ -50,6 +61,8 @@ export const DEFAULT_CONFIG: LabcommitrConfig = {
     subject_min_length: 3,
     // No prohibited words by default (user can customize)
     prohibited_words: [],
+    // No prohibited words in body by default (separate from subject)
+    prohibited_words_body: [],
   },
 
   /** Conservative advanced settings - minimal automation by default */
@@ -136,6 +149,14 @@ export function mergeWithDefaults(rawConfig: RawConfig): LabcommitrConfig {
 
   if (rawConfig.format) {
     merged.format = { ...merged.format, ...rawConfig.format };
+
+    // Handle nested body configuration if provided
+    if (rawConfig.format.body) {
+      merged.format.body = {
+        ...merged.format.body,
+        ...rawConfig.format.body,
+      };
+    }
   }
 
   if (rawConfig.validation) {

@@ -99,6 +99,13 @@ export function buildConfig(
       // Template is determined by style; emoji is handled at render time
       template: "{type}({scope}): {subject}",
       subject_max_length: 50,
+      // Default body configuration (optional, auto-detect editor preference)
+      body: {
+        required: false,
+        min_length: 0,
+        max_length: null,
+        editor_preference: "auto",
+      },
     },
     types: preset.types,
     validation: {
@@ -106,6 +113,7 @@ export function buildConfig(
       allowed_scopes: [],
       subject_min_length: 3,
       prohibited_words: [],
+      prohibited_words_body: [],
     },
     advanced: {
       aliases: {},

@@ -19,6 +19,21 @@ export interface CommitType {
 }
 
 /**
+ * Commit message body configuration
+ * Controls how commit message body/description is collected and validated
+ */
+export interface BodyConfig {
+  /** Whether commit body is required (default: false) */
+  required: boolean;
+  /** Minimum length when body is provided (default: 0 = no minimum) */
+  min_length: number;
+  /** Maximum length (null = unlimited, default: null) */
+  max_length: number | null;
+  /** Preferred editor for body input (default: "auto") */
+  editor_preference: "auto" | "inline" | "editor";
+}
+
+/**
  * Main configuration interface - fully resolved with all defaults applied
  * This represents the complete configuration structure after processing
  */
@@ -38,6 +53,8 @@ export interface LabcommitrConfig {
     template: string;
     /** Maximum length for commit subject line */
     subject_max_length: number;
+    /** Configuration for commit message body/description */
+    body: BodyConfig;
   };
   /** Array of available commit types (presence = enabled) */
   types: CommitType[];
@@ -51,6 +68,8 @@ export interface LabcommitrConfig {
     subject_min_length: number;
     /** Words prohibited in commit subjects */
     prohibited_words: string[];
+    /** Words prohibited in commit body (separate from subject) */
+    prohibited_words_body: string[];
   };
   /** Advanced configuration options */
   advanced: {
