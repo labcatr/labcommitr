@@ -18,7 +18,8 @@ import { editInEditor, detectEditor } from "./editor.js";
 
 /**
  * Create compact color-coded label
- * Labels are 7 characters wide (6 chars + padding) for alignment
+ * Labels are 8 characters wide (6 chars + 2 padding spaces) for alignment
+ * Text is centered within the label
  */
 function label(
   text: string,
@@ -32,7 +33,18 @@ function label(
     green: labelColors.bgBrightGreen,
   }[color];
 
-  return colorFn(` ${text.padEnd(6)} `);
+  // Center text within 6-character width
+  // For visual centering: when padding is odd, put extra space on LEFT for better balance
+  const width = 6;
+  const textLength = Math.min(text.length, width); // Cap at width
+  const padding = width - textLength;
+  // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
+  // For even padding (2, 4, 6...), floor/ceil both work the same
+  const leftPad = Math.ceil(padding / 2);
+  const rightPad = padding - leftPad;
+  const centeredText = " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
+
+  return colorFn(` ${centeredText} `);
 }
 
 /**
@@ -378,9 +390,7 @@ export async function promptBody(
     // Optional body - offer choice if editor available and preference allows
     if (editorAvailable && preference === "auto") {
       const inputMethod = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          "Enter commit body (optional):",
-        )}`,
+        message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
         options: [
           {
             value: "inline",
@@ -408,9 +418,7 @@ export async function promptBody(
     }
 
     const body = await text({
-      message: `${label("body", "yellow")}  ${textColors.pureWhite(
-        "Enter commit body (optional):",
-      )}`,
+      message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
       placeholder: "Press Enter to skip",
       validate: (value) => {
         if (!value) return undefined; // Empty is OK if optional
@@ -443,13 +451,13 @@ export async function promptBody(
       console.log();
     }
 
-    // For required body, offer editor option if available and preference allows
-    if (editorAvailable && (preference === "auto" || preference === "inline")) {
-      const inputMethod = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
-        )}`,
-        options: [
+      // For required body, offer editor option if available and preference allows
+      if (editorAvailable && (preference === "auto" || preference === "inline")) {
+        const inputMethod = await select({
+          message: `${label("body", "yellow")}  ${textColors.pureWhite(
+            `Enter commit body (required, min ${bodyConfig.min_length} chars):`,
+          )}`,
+          options: [
           {
             value: "inline",
             label: "Type inline",
@@ -543,9 +551,7 @@ async function promptBodyRequiredWithEditor(
     if (edited === null || edited === undefined) {
       // Editor cancelled, ask what to do
       const choice = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          "Editor cancelled. What would you like to do?",
-        )}`,
+        message: `${label("body", "yellow")}  ${textColors.pureWhite("Editor cancelled. What would you like to do?")}`,
         options: [
           {
             value: "retry",
@@ -637,9 +643,7 @@ async function promptBodyWithEditor(
 
     // Ask if user wants to re-edit or go back to inline
     const choice = await select({
-      message: `${label("body", "yellow")}  ${textColors.pureWhite(
-        "Validation failed. What would you like to do?",
-      )}`,
+      message: `${label("body", "yellow")}  ${textColors.pureWhite("Validation failed. What would you like to do?")}`,
       options: [
         {
           value: "re-edit",
@@ -748,6 +752,26 @@ export async function displayStagedFiles(
     return map[status] || status;
   };
 
+  /**
+   * Color code git status indicator to match git's default colors
+   */
+  const colorStatusCode = (status: string): string => {
+    switch (status) {
+      case "A":
+        return textColors.gitAdded(status);
+      case "M":
+        return textColors.gitModified(status);
+      case "D":
+        return textColors.gitDeleted(status);
+      case "R":
+        return textColors.gitRenamed(status);
+      case "C":
+        return textColors.gitCopied(status);
+      default:
+        return status;
+    }
+  };
+
   // Render content with connector lines
   // Empty line after header
   console.log(renderWithConnector(""));
@@ -767,7 +791,7 @@ export async function displayStagedFiles(
         for (const file of files) {
           console.log(
             renderWithConnector(
-              `      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+              `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
             ),
           );
         }
@@ -791,7 +815,7 @@ export async function displayStagedFiles(
         for (const file of files) {
           console.log(
             renderWithConnector(
-              `      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+              `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
             ),
           );
         }
