@@ -24,18 +24,18 @@ function execGit(args: string[]): string {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"],
     });
-    
+
     if (result.error) {
       throw result.error;
     }
-    
+
     if (result.status !== 0) {
       const stderr = result.stderr?.toString() || "Unknown error";
       const error = new Error(stderr);
       (error as any).code = result.status;
       throw error;
     }
-    
+
     return result.stdout?.toString().trim() || "";
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -100,7 +100,7 @@ export function stageAllTrackedFiles(): string[] {
   const beforeStaged = getStagedFiles();
   execGit(["add", "-u"]);
   const afterStaged = getStagedFiles();
-  
+
   // Return files that were newly staged
   return afterStaged.filter((file) => !beforeStaged.includes(file));
 }
@@ -114,19 +114,23 @@ export function getStagedFilesInfo(): StagedFileInfo[] {
     // Use --find-copies-harder with threshold to detect copied files (C)
     // --find-copies-harder also checks unmodified files as potential sources
     // Threshold 50 means 50% similarity required
-    const statusOutput = execGit(["diff", "--cached", "--name-status", "--find-copies-harder", "-C50"]);
+    const statusOutput = execGit([
+      "diff",
+      "--cached",
+      "--name-status",
+      "--find-copies-harder",
+      "-C50",
+    ]);
     if (!statusOutput) return [];
 
     // Get line statistics
-    const statsOutput = execGit([
-      "diff",
-      "--cached",
-      "--numstat",
-      "--format=",
-    ]);
+    const statsOutput = execGit(["diff", "--cached", "--numstat", "--format="]);
 
     const statusLines = statusOutput.split("\n").filter((l) => l.trim());
-    const statsMap = new Map<string, { additions: number; deletions: number }>();
+    const statsMap = new Map<
+      string,
+      { additions: number; deletions: number }
+    >();
 
     if (statsOutput) {
       const statsLines = statsOutput.split("\n").filter((l) => l.trim());
@@ -149,7 +153,7 @@ export function getStagedFilesInfo(): StagedFileInfo[] {
       // - Simple: "A  file.ts", "M  file.ts", "D  file.ts"
       // - Renamed: "R100\told.ts\tnew.ts" or "R\told.ts\tnew.ts"
       // - Copied: "C100\toriginal.ts\tcopy.ts" or "C\toriginal.ts\tcopy.ts"
-      
+
       let match = line.match(/^([MAD])\s+(.+)$/);
       let statusCode: string;
       let path: string;
@@ -201,7 +205,7 @@ export function getStagedFilesInfo(): StagedFileInfo[] {
 export function getGitStatus(alreadyStagedPaths: string[]): GitStatus {
   const alreadyStaged = alreadyStagedPaths;
   const allStagedInfo = getStagedFilesInfo();
-  
+
   // Separate already staged from newly staged
   const alreadyStagedSet = new Set(alreadyStaged);
   const alreadyStagedInfo: StagedFileInfo[] = [];
@@ -288,4 +292,3 @@ export function unstageFiles(files: string[]): void {
   if (files.length === 0) return;
   execGit(["reset", "HEAD", "--", ...files]);
 }
-

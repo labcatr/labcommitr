@@ -27,4 +27,3 @@ export function formatCommitMessage(
 
   return message;
 }
-

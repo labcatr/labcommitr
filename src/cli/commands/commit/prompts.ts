@@ -6,13 +6,11 @@
  */
 
 import { select, text, isCancel, log } from "@clack/prompts";
-import {
-  labelColors,
-  textColors,
-  success,
-  attention,
-} from "../init/colors.js";
-import type { LabcommitrConfig, CommitType } from "../../../lib/config/types.js";
+import { labelColors, textColors, success, attention } from "../init/colors.js";
+import type {
+  LabcommitrConfig,
+  CommitType,
+} from "../../../lib/config/types.js";
 import type { ValidationError } from "./types.js";
 import { editInEditor, detectEditor } from "./editor.js";
 
@@ -42,7 +40,8 @@ function label(
   // For even padding (2, 4, 6...), floor/ceil both work the same
   const leftPad = Math.ceil(padding / 2);
   const rightPad = padding - leftPad;
-  const centeredText = " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
+  const centeredText =
+    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
 
   return colorFn(` ${centeredText} `);
 }
@@ -68,9 +67,13 @@ export async function promptType(
   if (providedType) {
     const typeConfig = config.types.find((t) => t.id === providedType);
     if (!typeConfig) {
-      const available = config.types.map((t) => `  • ${t.id} - ${t.description}`).join("\n");
+      const available = config.types
+        .map((t) => `  • ${t.id} - ${t.description}`)
+        .join("\n");
       console.error(`\n✗ Error: Invalid commit type '${providedType}'`);
-      console.error("\n  The commit type is not defined in your configuration.");
+      console.error(
+        "\n  The commit type is not defined in your configuration.",
+      );
       console.error("\n  Available types:");
       console.error(available);
       console.error("\n  Solutions:");
@@ -117,7 +120,9 @@ export async function promptScope(
   // If scope provided via CLI flag, validate it
   if (providedScope !== undefined) {
     if (providedScope === "" && isRequired) {
-      console.error(`\n✗ Error: Scope is required for commit type '${selectedType}'`);
+      console.error(
+        `\n✗ Error: Scope is required for commit type '${selectedType}'`,
+      );
       process.exit(1);
     }
     if (allowedScopes.length > 0 && !allowedScopes.includes(providedScope)) {
@@ -367,7 +372,7 @@ export async function promptBody(
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
   const preference = bodyConfig.editor_preference;
-  
+
   // Explicitly check if body is required (handle potential type coercion)
   const isRequired = bodyConfig.required === true;
 
@@ -454,13 +459,13 @@ export async function promptBody(
       console.log();
     }
 
-      // For required body, offer editor option if available and preference allows
-      if (editorAvailable && (preference === "auto" || preference === "inline")) {
-        const inputMethod = await select({
-          message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-          )}`,
-          options: [
+    // For required body, offer editor option if available and preference allows
+    if (editorAvailable && (preference === "auto" || preference === "inline")) {
+      const inputMethod = await select({
+        message: `${label("body", "yellow")}  ${textColors.pureWhite(
+          `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
+        )}`,
+        options: [
           {
             value: "inline",
             label: "Type inline",
@@ -693,13 +698,21 @@ function renderWithConnector(content: string): string {
  * renders connector lines for multi-line content, and ends with
  * a confirmation prompt to maintain visual continuity.
  */
-export async function displayStagedFiles(
-  status: {
-    alreadyStaged: Array<{ path: string; status: string; additions?: number; deletions?: number }>;
-    newlyStaged: Array<{ path: string; status: string; additions?: number; deletions?: number }>;
-    totalStaged: number;
-  },
-): Promise<void> {
+export async function displayStagedFiles(status: {
+  alreadyStaged: Array<{
+    path: string;
+    status: string;
+    additions?: number;
+    deletions?: number;
+  }>;
+  newlyStaged: Array<{
+    path: string;
+    status: string;
+    additions?: number;
+    deletions?: number;
+  }>;
+  totalStaged: number;
+}): Promise<void> {
   // Start connector line using @clack/prompts
   log.info(
     `${label("files", "green")}  ${textColors.pureWhite(
@@ -709,7 +722,12 @@ export async function displayStagedFiles(
 
   // Group files by status
   const groupByStatus = (
-    files: Array<{ path: string; status: string; additions?: number; deletions?: number }>,
+    files: Array<{
+      path: string;
+      status: string;
+      additions?: number;
+      deletions?: number;
+    }>,
   ) => {
     const groups: Record<string, typeof files> = {
       M: [],
@@ -784,13 +802,19 @@ export async function displayStagedFiles(
     const alreadyPlural = status.alreadyStaged.length !== 1 ? "s" : "";
     console.log(
       renderWithConnector(
-        textColors.brightCyan(`Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`),
+        textColors.brightCyan(
+          `Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`,
+        ),
       ),
     );
     const groups = groupByStatus(status.alreadyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(renderWithConnector(`    ${formatStatusName(statusCode)} (${files.length}):`));
+        console.log(
+          renderWithConnector(
+            `    ${formatStatusName(statusCode)} (${files.length}):`,
+          ),
+        );
         for (const file of files) {
           console.log(
             renderWithConnector(
@@ -808,13 +832,19 @@ export async function displayStagedFiles(
     const newlyPlural = status.newlyStaged.length !== 1 ? "s" : "";
     console.log(
       renderWithConnector(
-        textColors.brightYellow(`Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`),
+        textColors.brightYellow(
+          `Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`,
+        ),
       ),
     );
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(renderWithConnector(`    ${formatStatusName(statusCode)} (${files.length}):`));
+        console.log(
+          renderWithConnector(
+            `    ${formatStatusName(statusCode)} (${files.length}):`,
+          ),
+        );
         for (const file of files) {
           console.log(
             renderWithConnector(
@@ -832,10 +862,16 @@ export async function displayStagedFiles(
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(renderWithConnector(`  ${formatStatusName(statusCode)} (${files.length}):`));
+        console.log(
+          renderWithConnector(
+            `  ${formatStatusName(statusCode)} (${files.length}):`,
+          ),
+        );
         for (const file of files) {
           console.log(
-            renderWithConnector(`    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`),
+            renderWithConnector(
+              `    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+            ),
           );
         }
       }
@@ -844,7 +880,9 @@ export async function displayStagedFiles(
   }
 
   // Separator line with connector
-  console.log(renderWithConnector("─────────────────────────────────────────────"));
+  console.log(
+    renderWithConnector("─────────────────────────────────────────────"),
+  );
 
   // Use select prompt for confirmation (maintains connector continuity)
   const confirmation = await select({
@@ -878,7 +916,7 @@ export async function displayPreview(
   // Empty line after header
   console.log(renderWithConnector(""));
   console.log(renderWithConnector(textColors.brightCyan(formattedMessage)));
-  
+
   if (body) {
     console.log(renderWithConnector(""));
     const bodyLines = body.split("\n");
@@ -886,10 +924,12 @@ export async function displayPreview(
       console.log(renderWithConnector(textColors.white(line)));
     }
   }
-  
+
   console.log(renderWithConnector(""));
   // Separator line with connector
-  console.log(renderWithConnector("─────────────────────────────────────────────"));
+  console.log(
+    renderWithConnector("─────────────────────────────────────────────"),
+  );
 
   const confirmed = await select({
     message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
@@ -908,4 +948,3 @@ export async function displayPreview(
   handleCancel(confirmed);
   return confirmed as boolean;
 }
-

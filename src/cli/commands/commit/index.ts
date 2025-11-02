@@ -53,16 +53,14 @@ async function cleanup(state: CommitState): Promise<void> {
     console.log();
     console.log("◐ Cleaning up...");
     unstageFiles(state.newlyStagedFiles);
-    
+
     const preservedCount = state.alreadyStagedFiles.length;
     if (preservedCount > 0) {
       console.log(
         `✓ Unstaged ${state.newlyStagedFiles.length} file${state.newlyStagedFiles.length !== 1 ? "s" : ""} (preserved ${preservedCount} already-staged file${preservedCount !== 1 ? "s" : ""})`,
       );
     } else {
-      console.log(
-        `✓ Unstaged files successfully`,
-      );
+      console.log(`✓ Unstaged files successfully`);
     }
   }
 }
@@ -82,7 +80,7 @@ export async function commitAction(options: {
   try {
     // Step 1: Load configuration
     const configResult = await loadConfig();
-    
+
     if (!configResult.config) {
       Logger.error("Configuration not found");
       console.error("\n  Run 'lab init' to create configuration file.\n");
@@ -286,4 +284,3 @@ export async function commitAction(options: {
     process.exit(1);
   }
 }
-

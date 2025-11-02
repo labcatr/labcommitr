@@ -5,7 +5,13 @@
  */
 
 import { spawnSync } from "child_process";
-import { writeFileSync, readFileSync, unlinkSync, mkdtempSync, rmdirSync } from "fs";
+import {
+  writeFileSync,
+  readFileSync,
+  unlinkSync,
+  mkdtempSync,
+  rmdirSync,
+} from "fs";
 import { join, dirname } from "path";
 import { tmpdir } from "os";
 import { Logger } from "../../../lib/logger.js";
@@ -53,7 +59,9 @@ export function editInEditor(
   if (!editorCommand) {
     Logger.error("No editor found");
     console.error("\n  No editor available (nvim, vim, or vi)");
-    console.error("  Set $EDITOR environment variable to your preferred editor\n");
+    console.error(
+      "  Set $EDITOR environment variable to your preferred editor\n",
+    );
     return null;
   }
 
@@ -75,7 +83,7 @@ export function editInEditor(
     // Determine editor arguments based on editor type
     let editorArgs: string[];
     const isNeovim = editorCommand.includes("nvim");
-    
+
     if (isNeovim) {
       // Neovim: use -f flag to run in foreground (don't detach)
       editorArgs = ["-f", tempFile];
@@ -129,7 +137,8 @@ export function editInEditor(
       return content.trim();
     } catch (error) {
       Logger.error("Failed to read edited file");
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error(`\n  Error reading file: ${errorMessage}\n`);
 
       // Cleanup
@@ -156,4 +165,3 @@ export function editInEditor(
     return null;
   }
 }
-

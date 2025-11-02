@@ -45,7 +45,8 @@ function label(
   // For even padding (2, 4, 6...), floor/ceil both work the same
   const leftPad = Math.ceil(padding / 2);
   const rightPad = padding - leftPad;
-  const centeredText = " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
+  const centeredText =
+    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
 
   return colorFn(` ${centeredText} `);
 }
