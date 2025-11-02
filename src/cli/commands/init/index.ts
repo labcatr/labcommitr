@@ -21,6 +21,7 @@ import {
   promptPreset,
   promptEmoji,
   promptAutoStage,
+  promptBodyRequired,
   displayProcessingSteps,
 } from "./prompts.js";
 import { buildConfig, getPreset } from "../../../lib/presets/index.js";
@@ -102,6 +103,7 @@ async function initAction(options: {
 
     const emojiEnabled = await promptEmoji();
     const autoStage = await promptAutoStage();
+    const bodyRequired = await promptBodyRequired();
 
     // Small pause before processing
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -114,6 +116,7 @@ async function initAction(options: {
       emoji: emojiEnabled,
       scope: "optional",
       autoStage,
+      bodyRequired,
     });
 
     // Show title "Labcommitr initializing..."

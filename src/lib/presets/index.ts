@@ -75,6 +75,8 @@ export function buildConfig(
     scopeRequiredFor?: string[];
     // Git integration
     autoStage?: boolean;
+    // Body requirement
+    bodyRequired?: boolean;
   },
 ): LabcommitrConfig {
   const preset = getPreset(presetId);
@@ -99,9 +101,9 @@ export function buildConfig(
       // Template is determined by style; emoji is handled at render time
       template: "{type}({scope}): {subject}",
       subject_max_length: 50,
-      // Default body configuration (optional, auto-detect editor preference)
+      // Body configuration (respects user choice, defaults to optional)
       body: {
-        required: false,
+        required: customizations.bodyRequired ?? false,
         min_length: 0,
         max_length: null,
         editor_preference: "auto",
