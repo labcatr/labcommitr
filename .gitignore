@@ -38,6 +38,7 @@ coverage/
 # Testing
 .test-temp/
 test-results/
+scripts/
 
 # npm/yarn/pnpm
 npm-debug.log*
@@ -71,10 +72,8 @@ Thumbs.db
 # Remove rust files for now
 rust-src/
 
-### Development
-# Development progress tracking (internal use only)
-DEVELOPMENT_PROGRESS.md
-REQUIREMENTS.md
-CONFIG_SCHEMA.md
-DEVELOPMENT_GUIDELINES.md
-ARCHITECTURE_DECISIONS.md
+### Documentation
+# Ignore all .md files except README.md and .changeset/*.md (local reference only)
+*.md
+!README.md
+!.changeset/*.md
