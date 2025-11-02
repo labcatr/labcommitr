@@ -31,32 +31,7 @@ import {
 } from "./prompts.js";
 import { formatCommitMessage } from "./formatter.js";
 import type { CommitState } from "./types.js";
-import * as readline from "readline";
 import { success } from "../init/colors.js";
-
-/**
- * Wait for user to press Enter (for file verification step)
- */
-function waitForEnter(): Promise<void> {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    rl.on("line", () => {
-      rl.close();
-      resolve();
-    });
-
-    // Handle Ctrl+C
-    rl.on("SIGINT", () => {
-      rl.close();
-      console.log("\nCommit cancelled.");
-      process.exit(0);
-    });
-  });
-}
 
 /**
  * Handle cleanup: unstage files we staged
@@ -210,12 +185,9 @@ export async function commitAction(options: {
       }
     }
 
-    // Step 4: Display staged files verification
+    // Step 4: Display staged files verification and wait for confirmation
     const gitStatus = getGitStatus(alreadyStagedFiles);
-    displayStagedFiles(gitStatus);
-
-    // Wait for user confirmation
-    await waitForEnter();
+    await displayStagedFiles(gitStatus);
 
     // Step 5: Collect commit data via prompts
     const { type, emoji } = await promptType(config, options.type);

@@ -5,7 +5,7 @@
  * Uses same styling as init command for consistency
  */
 
-import { select, text, isCancel } from "@clack/prompts";
+import { select, text, isCancel, log } from "@clack/prompts";
 import {
   labelColors,
   textColors,
@@ -673,22 +673,32 @@ async function promptBodyWithEditor(
 }
 
 /**
- * Display staged files verification
+ * Render a line with connector (│) character at the start
+ * Maintains visual consistency with @clack/prompts connector lines
  */
-export function displayStagedFiles(
+function renderWithConnector(content: string): string {
+  return `│  ${content}`;
+}
+
+/**
+ * Display staged files verification with connector line support
+ * Uses @clack/prompts log.info() to start connector, then manually
+ * renders connector lines for multi-line content, and ends with
+ * a confirmation prompt to maintain visual continuity.
+ */
+export async function displayStagedFiles(
   status: {
     alreadyStaged: Array<{ path: string; status: string; additions?: number; deletions?: number }>;
     newlyStaged: Array<{ path: string; status: string; additions?: number; deletions?: number }>;
     totalStaged: number;
   },
-): void {
-  console.log();
-  console.log(
+): Promise<void> {
+  // Start connector line using @clack/prompts
+  log.info(
     `${label("files", "green")}  ${textColors.pureWhite(
       `Files to be committed (${status.totalStaged} file${status.totalStaged !== 1 ? "s" : ""}):`,
     )}`,
   );
-  console.log();
 
   // Group files by status
   const groupByStatus = (
@@ -738,36 +748,56 @@ export function displayStagedFiles(
     return map[status] || status;
   };
 
+  // Render content with connector lines
+  // Empty line after header
+  console.log(renderWithConnector(""));
+
   // Show already staged if any
   if (status.alreadyStaged.length > 0) {
     const alreadyPlural = status.alreadyStaged.length !== 1 ? "s" : "";
-    console.log(`  ${textColors.brightCyan(`Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`)}`);
+    console.log(
+      renderWithConnector(
+        textColors.brightCyan(`Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`),
+      ),
+    );
     const groups = groupByStatus(status.alreadyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(`    ${formatStatusName(statusCode)} (${files.length}):`);
+        console.log(renderWithConnector(`    ${formatStatusName(statusCode)} (${files.length}):`));
         for (const file of files) {
-          console.log(`      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`);
+          console.log(
+            renderWithConnector(
+              `      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+            ),
+          );
         }
       }
     }
-    console.log();
+    console.log(renderWithConnector(""));
   }
 
   // Show newly staged if any
   if (status.newlyStaged.length > 0) {
     const newlyPlural = status.newlyStaged.length !== 1 ? "s" : "";
-    console.log(`  ${textColors.brightYellow(`Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`)}`);
+    console.log(
+      renderWithConnector(
+        textColors.brightYellow(`Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`),
+      ),
+    );
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(`    ${formatStatusName(statusCode)} (${files.length}):`);
+        console.log(renderWithConnector(`    ${formatStatusName(statusCode)} (${files.length}):`));
         for (const file of files) {
-          console.log(`      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`);
+          console.log(
+            renderWithConnector(
+              `      ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+            ),
+          );
         }
       }
     }
-    console.log();
+    console.log(renderWithConnector(""));
   }
 
   // If no separation needed, show all together
