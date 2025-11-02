@@ -11,6 +11,7 @@
     "format:code": "prettier -w \"**/*\" --ignore-unknown --cache",
     "version": "changeset version && pnpm install --no-frozen-lockfile && pnpm run format"
   },
+  "type": "module",
   "bin": {
     "labcommitr": "./dist/index.js"
   },
@@ -27,15 +28,21 @@
   "author": "Trevor Fox",
   "license": "ISC",
   "dependencies": {
-    "@changesets/cli": "^2.27.1",
-	"boxen": "^7.1.1",
-    "consola": "^3.2.3",
-    "magicast": "^0.3.2",
-    "prettier": "^3.1.1",
-    "typescript": "^5.3.3",
-    "ufo": "^1.3.2"
+    "@changesets/cli": "^2.29.7",
+    "@types/node": "^24.3.3",
+    "boxen": "^8.0.1",
+    "consola": "^3.4.2",
+    "cosmiconfig": "^9.0.0",
+    "js-yaml": "^4.1.0",
+    "magicast": "^0.3.5",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "ufo": "^1.6.1"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
   }
 }
