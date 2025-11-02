@@ -34,6 +34,18 @@ import type { CommitState } from "./types.js";
 import { success } from "../init/colors.js";
 
 /**
+ * Clear terminal screen for clean prompt display
+ * Only clears if running in a TTY environment
+ */
+function clearTerminal(): void {
+  if (process.stdout.isTTY) {
+    process.stdout.write("\x1B[2J"); // Clear screen
+    process.stdout.write("\x1B[H"); // Move cursor to home position
+    process.stdout.write("\x1B[3J"); // Clear scrollback buffer (optional, for full clear)
+  }
+}
+
+/**
  * Handle cleanup: unstage files we staged
  */
 async function cleanup(state: CommitState): Promise<void> {
@@ -64,6 +76,9 @@ export async function commitAction(options: {
   message?: string;
   verify?: boolean;
 }): Promise<void> {
+  // Clear terminal for clean prompt display
+  clearTerminal();
+
   try {
     // Step 1: Load configuration
     const configResult = await loadConfig();
