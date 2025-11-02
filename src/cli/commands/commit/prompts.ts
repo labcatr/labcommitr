@@ -805,44 +805,67 @@ export async function displayStagedFiles(
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(`  ${formatStatusName(statusCode)} (${files.length}):`);
+        console.log(renderWithConnector(`  ${formatStatusName(statusCode)} (${files.length}):`));
         for (const file of files) {
-          console.log(`    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`);
+          console.log(
+            renderWithConnector(`    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`),
+          );
         }
       }
     }
-    console.log();
+    console.log(renderWithConnector(""));
   }
 
-  console.log("─────────────────────────────────────────────");
-  console.log(`  Press Enter to continue, Ctrl+C to cancel`);
+  // Separator line with connector
+  console.log(renderWithConnector("─────────────────────────────────────────────"));
+
+  // Use select prompt for confirmation (maintains connector continuity)
+  const confirmation = await select({
+    message: "Press Enter to continue, Esc to cancel",
+    options: [
+      {
+        value: "continue",
+        label: "Continue",
+      },
+    ],
+  });
+
+  handleCancel(confirmation);
 }
 
 /**
- * Display commit message preview
+ * Display commit message preview with connector line support
+ * Uses @clack/prompts log.info() to start connector, then manually
+ * renders connector lines for multi-line preview content.
  */
 export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
 ): Promise<boolean> {
-  console.log();
-  console.log(
+  // Start connector line using @clack/prompts
+  log.info(
     `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
   );
-  console.log();
-  console.log(`  ${textColors.brightCyan(formattedMessage)}`);
+
+  // Render content with connector lines
+  // Empty line after header
+  console.log(renderWithConnector(""));
+  console.log(renderWithConnector(textColors.brightCyan(formattedMessage)));
+  
   if (body) {
-    console.log();
+    console.log(renderWithConnector(""));
     const bodyLines = body.split("\n");
     for (const line of bodyLines) {
-      console.log(`  ${textColors.white(line)}`);
+      console.log(renderWithConnector(textColors.white(line)));
     }
   }
-  console.log();
-  console.log("─────────────────────────────────────────────");
+  
+  console.log(renderWithConnector(""));
+  // Separator line with connector
+  console.log(renderWithConnector("─────────────────────────────────────────────"));
 
   const confirmed = await select({
-    message: `  ${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
+    message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
     options: [
       {
         value: true,
