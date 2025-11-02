@@ -80,6 +80,24 @@ export const textColors = {
    * Perfect for "Clef:" label
    */
   labelBlue: (text: string) => `\x1b[38;5;75m${text}\x1b[0m`,
+
+  /**
+   * Git Status Colors - Match git's default color scheme
+   */
+  // Added (A) - Green (success, positive)
+  gitAdded: (text: string) => `\x1b[38;5;46m${text}\x1b[0m`, // Bright green
+  
+  // Modified (M) - Yellow (caution, change)
+  gitModified: (text: string) => `\x1b[38;5;226m${text}\x1b[0m`, // Bright yellow
+  
+  // Deleted (D) - Red (danger, removal)
+  gitDeleted: (text: string) => `\x1b[38;5;196m${text}\x1b[0m`, // Bright red
+  
+  // Renamed (R) - Cyan (transformation)
+  gitRenamed: (text: string) => `\x1b[38;5;51m${text}\x1b[0m`, // Bright cyan
+  
+  // Copied (C) - Magenta (duplication)
+  gitCopied: (text: string) => `\x1b[38;5;201m${text}\x1b[0m`, // Bright magenta
 };
 
 /**
