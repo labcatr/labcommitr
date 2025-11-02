@@ -111,7 +111,10 @@ export function stageAllTrackedFiles(): string[] {
 export function getStagedFilesInfo(): StagedFileInfo[] {
   try {
     // Get file statuses
-    const statusOutput = execGit(["diff", "--cached", "--name-status"]);
+    // Use --find-copies-harder with threshold to detect copied files (C)
+    // --find-copies-harder also checks unmodified files as potential sources
+    // Threshold 50 means 50% similarity required
+    const statusOutput = execGit(["diff", "--cached", "--name-status", "--find-copies-harder", "-C50"]);
     if (!statusOutput) return [];
 
     // Get line statistics
@@ -142,26 +145,48 @@ export function getStagedFilesInfo(): StagedFileInfo[] {
     const alreadyStaged = new Set(getStagedFiles());
 
     for (const line of statusLines) {
-      const match = line.match(/^([MADRC])\s+(.+)$/);
+      // Handle different git diff --cached --name-status formats:
+      // - Simple: "A  file.ts", "M  file.ts", "D  file.ts"
+      // - Renamed: "R100\told.ts\tnew.ts" or "R\told.ts\tnew.ts"
+      // - Copied: "C100\toriginal.ts\tcopy.ts" or "C\toriginal.ts\tcopy.ts"
+      
+      let match = line.match(/^([MAD])\s+(.+)$/);
+      let statusCode: string;
+      let path: string;
+
       if (match) {
-        const [, statusCode, path] = match;
-        const stats = statsMap.get(path);
-
-        // Determine status type
-        let status: StagedFileInfo["status"] = "M";
-        if (statusCode === "A") status = "A";
-        else if (statusCode === "D") status = "D";
-        else if (statusCode === "R") status = "R";
-        else if (statusCode === "C") status = "C";
-        else if (statusCode === "M") status = "M";
-
-        files.push({
-          path,
-          status,
-          additions: stats?.additions,
-          deletions: stats?.deletions,
-        });
+        // Simple format: A, M, D
+        [, statusCode, path] = match;
+      } else {
+        // Renamed or Copied format: R100\told\tnew or R\told\tnew
+        match = line.match(/^([RC])(?:\d+)?\s+(.+)\t(.+)$/);
+        if (match) {
+          const [, code, oldPath, newPath] = match;
+          statusCode = code;
+          // For renames/copies, use the new path
+          path = newPath;
+        } else {
+          // Skip lines that don't match expected format
+          continue;
+        }
       }
+
+      const stats = statsMap.get(path);
+
+      // Determine status type
+      let status: StagedFileInfo["status"] = "M";
+      if (statusCode === "A") status = "A";
+      else if (statusCode === "D") status = "D";
+      else if (statusCode === "R") status = "R";
+      else if (statusCode === "C") status = "C";
+      else if (statusCode === "M") status = "M";
+
+      files.push({
+        path,
+        status,
+        additions: stats?.additions,
+        deletions: stats?.deletions,
+      });
     }
 
     return files;
