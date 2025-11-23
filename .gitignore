@@ -36,9 +36,8 @@ coverage/
 *.lcov
 
 # Testing
-.test-temp/
+.sandbox/
 test-results/
-scripts/
 
 # npm/yarn/pnpm
 npm-debug.log*
