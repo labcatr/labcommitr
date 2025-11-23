@@ -36,6 +36,7 @@ coverage/
 *.lcov
 
 # Testing
+# Sandbox directory for testing Labcommitr commands (scripts in scripts/ are tracked)
 .sandbox/
 test-results/
 
@@ -66,6 +67,7 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
 
 
 ### Other
