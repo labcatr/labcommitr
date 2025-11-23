@@ -62,6 +62,7 @@ function handleCancel(value: unknown): void {
 export async function promptType(
   config: LabcommitrConfig,
   providedType?: string,
+  initialType?: string,
 ): Promise<{ type: string; emoji?: string }> {
   // If type provided via CLI flag, validate it
   if (providedType) {
@@ -87,6 +88,11 @@ export async function promptType(
     };
   }
 
+  // Find initial type index if provided
+  const initialIndex = initialType
+    ? config.types.findIndex((t) => t.id === initialType)
+    : undefined;
+
   const selected = await select({
     message: `${label("type", "magenta")}  ${textColors.pureWhite("Select commit type:")}`,
     options: config.types.map((type) => ({
@@ -94,6 +100,7 @@ export async function promptType(
       label: `${type.id.padEnd(8)} ${type.description}`,
       hint: type.description,
     })),
+    initialValue: initialIndex !== undefined && initialIndex >= 0 ? config.types[initialIndex].id : undefined,
   });
 
   handleCancel(selected);
@@ -113,6 +120,7 @@ export async function promptScope(
   config: LabcommitrConfig,
   selectedType: string,
   providedScope?: string,
+  initialScope?: string | undefined,
 ): Promise<string | undefined> {
   const isRequired = config.validation.require_scope_for.includes(selectedType);
   const allowedScopes = config.validation.allowed_scopes;
@@ -146,11 +154,17 @@ export async function promptScope(
       },
     ];
 
+    // Find initial scope index if provided
+    const initialIndex = initialScope
+      ? allowedScopes.findIndex((s) => s === initialScope)
+      : undefined;
+
     const selected = await select({
       message: `${label("scope", "blue")}  ${textColors.pureWhite(
         `Enter scope ${isRequired ? "(required for '" + selectedType + "')" : "(optional)"}:`,
       )}`,
       options,
+      initialValue: initialIndex !== undefined && initialIndex >= 0 ? allowedScopes[initialIndex] : initialScope || undefined,
     });
 
     handleCancel(selected);
@@ -158,7 +172,8 @@ export async function promptScope(
     if (selected === "__custom__") {
       const custom = await text({
         message: `${label("scope", "blue")}  ${textColors.pureWhite("Enter custom scope:")}`,
-        placeholder: "",
+        placeholder: initialScope || "",
+        initialValue: initialScope,
         validate: (value) => {
           if (isRequired && !value) {
             return "Scope is required for this commit type";
@@ -180,6 +195,7 @@ export async function promptScope(
       `Enter scope ${isRequired ? "(required)" : "(optional)"}:`,
     )}`,
     placeholder: "",
+    initialValue: initialScope,
     validate: (value) => {
       if (isRequired && !value) {
         return "Scope is required for this commit type";
@@ -242,6 +258,7 @@ function validateSubject(
 export async function promptSubject(
   config: LabcommitrConfig,
   providedMessage?: string,
+  initialSubject?: string,
 ): Promise<string> {
   if (providedMessage) {
     const errors = validateSubject(config, providedMessage);
@@ -259,7 +276,7 @@ export async function promptSubject(
     return providedMessage;
   }
 
-  let subject: string | symbol = "";
+  let subject: string | symbol = initialSubject || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -280,6 +297,7 @@ export async function promptSubject(
         `Enter commit subject (max ${config.format.subject_max_length} chars):`,
       )}`,
       placeholder: "",
+      initialValue: typeof subject === "string" ? subject : initialSubject,
       validate: (value) => {
         const validationErrors = validateSubject(config, value);
         if (validationErrors.length > 0) {
@@ -368,6 +386,7 @@ function validateBody(
  */
 export async function promptBody(
   config: LabcommitrConfig,
+  initialBody?: string | undefined,
 ): Promise<string | undefined> {
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
@@ -386,11 +405,11 @@ export async function promptBody(
     // Fall through to inline input
   } else if (preference === "editor" && editorAvailable && !isRequired) {
     // Optional body with editor preference - use editor directly
-    const edited = await promptBodyWithEditor(config, "");
+    const edited = await promptBodyWithEditor(config, initialBody || "");
     return edited || undefined;
   } else if (preference === "editor" && editorAvailable && isRequired) {
     // Required body with editor preference - use editor with validation loop
-    return await promptBodyRequiredWithEditor(config);
+    return await promptBodyRequiredWithEditor(config, initialBody);
   }
 
   // Inline input path
@@ -420,7 +439,7 @@ export async function promptBody(
       if (inputMethod === "skip") {
         return undefined;
       } else if (inputMethod === "editor") {
-        return await promptBodyWithEditor(config, "");
+        return await promptBodyWithEditor(config, initialBody || "");
       }
       // Fall through to inline
     }
@@ -428,6 +447,7 @@ export async function promptBody(
     const body = await text({
       message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
       placeholder: "Press Enter to skip",
+      initialValue: initialBody,
       validate: (value) => {
         if (!value) return undefined; // Empty is OK if optional
         const errors = validateBody(config, value);
@@ -443,7 +463,7 @@ export async function promptBody(
   }
 
   // Required body
-  let body: string | symbol = "";
+  let body: string | symbol = initialBody || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -480,7 +500,7 @@ export async function promptBody(
       handleCancel(inputMethod);
 
       if (inputMethod === "editor") {
-        const editorBody = await promptBodyWithEditor(config, body as string);
+        const editorBody = await promptBodyWithEditor(config, typeof body === "string" ? body : initialBody || "");
         if (editorBody !== null && editorBody !== undefined) {
           body = editorBody;
         } else {
@@ -494,6 +514,7 @@ export async function promptBody(
             `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
+          initialValue: typeof body === "string" ? body : initialBody,
           validate: (value) => {
             const validationErrors = validateBody(config, value);
             if (validationErrors.length > 0) {
@@ -512,6 +533,7 @@ export async function promptBody(
           `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         )}`,
         placeholder: "",
+        initialValue: typeof body === "string" ? body : initialBody,
         validate: (value) => {
           const validationErrors = validateBody(config, value);
           if (validationErrors.length > 0) {
@@ -537,9 +559,10 @@ export async function promptBody(
  */
 async function promptBodyRequiredWithEditor(
   config: LabcommitrConfig,
+  initialBody?: string,
 ): Promise<string> {
   const bodyConfig = config.format.body;
-  let body: string = "";
+  let body: string = initialBody || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -588,6 +611,7 @@ async function promptBodyRequiredWithEditor(
             `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
+          initialValue: body,
           validate: (value) => {
             const validationErrors = validateBody(config, value);
             if (validationErrors.length > 0) {
@@ -902,11 +926,12 @@ export async function displayStagedFiles(status: {
  * Display commit message preview with connector line support
  * Uses @clack/prompts log.info() to start connector, then manually
  * renders connector lines for multi-line preview content.
+ * Returns the action the user selected: "commit", "edit-type", "edit-scope", "edit-subject", "edit-body", or "cancel"
  */
 export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
-): Promise<boolean> {
+): Promise<"commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel"> {
   // Start connector line using @clack/prompts
   log.info(
     `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
@@ -931,20 +956,36 @@ export async function displayPreview(
     renderWithConnector("─────────────────────────────────────────────"),
   );
 
-  const confirmed = await select({
+  const action = await select({
     message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
     options: [
       {
-        value: true,
-        label: "Yes, create commit",
+        value: "commit",
+        label: "Create commit",
       },
       {
-        value: false,
-        label: "No, let me edit",
+        value: "edit-type",
+        label: "Edit type",
+      },
+      {
+        value: "edit-scope",
+        label: "Edit scope",
+      },
+      {
+        value: "edit-subject",
+        label: "Edit subject",
+      },
+      {
+        value: "edit-body",
+        label: "Edit body",
+      },
+      {
+        value: "cancel",
+        label: "Cancel",
       },
     ],
   });
 
-  handleCancel(confirmed);
-  return confirmed as boolean;
+  handleCancel(action);
+  return action as "commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel";
 }

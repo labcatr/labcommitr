@@ -81,6 +81,13 @@ export async function commitAction(options: {
     // Step 1: Load configuration
     const configResult = await loadConfig();
 
+    // Require an actual config file - reject fallback defaults
+    if (configResult.source === "defaults") {
+      Logger.error("Configuration not found");
+      console.error("\n  Run 'lab init' to create configuration file.\n");
+      process.exit(1);
+    }
+
     if (!configResult.config) {
       Logger.error("Configuration not found");
       console.error("\n  Run 'lab init' to create configuration file.\n");
@@ -202,13 +209,65 @@ export async function commitAction(options: {
     const gitStatus = getGitStatus(alreadyStagedFiles);
     await displayStagedFiles(gitStatus);
 
-    // Step 5: Collect commit data via prompts
-    const { type, emoji } = await promptType(config, options.type);
-    const scope = await promptScope(config, type, options.scope);
-    const subject = await promptSubject(config, options.message);
-    const body = await promptBody(config);
+    // Step 5: Collect initial commit data via prompts
+    let { type, emoji } = await promptType(config, options.type);
+    let scope = await promptScope(config, type, options.scope);
+    let subject = await promptSubject(config, options.message);
+    let body = await promptBody(config);
 
-    // Step 6: Format and preview message
+    // Step 6: Preview/edit loop
+    let action: "commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel";
+    
+    do {
+      // Format message with current values
+      const formattedMessage = formatCommitMessage(
+        config,
+        type,
+        emoji,
+        scope,
+        subject,
+      );
+
+      // Show preview and get user action
+      action = await displayPreview(formattedMessage, body);
+
+      // Handle edit actions
+      if (action === "edit-type") {
+        const typeResult = await promptType(config, undefined, type);
+        type = typeResult.type;
+        emoji = typeResult.emoji;
+        // Re-validate scope if type changed (scope requirements might have changed)
+        const isScopeRequired = config.validation.require_scope_for.includes(type);
+        if (isScopeRequired && !scope) {
+          // Scope is now required, prompt for it
+          scope = await promptScope(config, type, undefined, scope);
+        }
+      } else if (action === "edit-scope") {
+        scope = await promptScope(config, type, undefined, scope);
+      } else if (action === "edit-subject") {
+        subject = await promptSubject(config, undefined, subject);
+      } else if (action === "edit-body") {
+        body = await promptBody(config, body);
+      } else if (action === "cancel") {
+        await cleanup({
+          config,
+          autoStageEnabled,
+          alreadyStagedFiles,
+          newlyStagedFiles,
+          type,
+          typeEmoji: emoji,
+          scope,
+          subject,
+          body,
+          formattedMessage: formatCommitMessage(config, type, emoji, scope, subject),
+        });
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
+      // If action is "commit", exit loop and proceed
+    } while (action !== "commit");
+
+    // Final formatted message for commit
     const formattedMessage = formatCommitMessage(
       config,
       type,
@@ -216,26 +275,6 @@ export async function commitAction(options: {
       scope,
       subject,
     );
-
-    const confirmed = await displayPreview(formattedMessage, body);
-
-    if (!confirmed) {
-      // User selected "No, let me edit"
-      await cleanup({
-        config,
-        autoStageEnabled,
-        alreadyStagedFiles,
-        newlyStagedFiles,
-        type,
-        typeEmoji: emoji,
-        scope,
-        subject,
-        body,
-        formattedMessage,
-      });
-      console.log("\nCommit cancelled.");
-      process.exit(0);
-    }
 
     // Step 7: Execute commit
     console.log();
