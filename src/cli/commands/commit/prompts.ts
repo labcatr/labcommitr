@@ -72,14 +72,10 @@ export async function promptType(
         .map((t) => `  • ${t.id} - ${t.description}`)
         .join("\n");
       console.error(`\n✗ Error: Invalid commit type '${providedType}'`);
-      console.error(
-        "\n  The commit type is not defined in your configuration.",
-      );
+      console.error("\n  This type is not defined in your configuration.");
       console.error("\n  Available types:");
       console.error(available);
-      console.error("\n  Solutions:");
-      console.error("    • Use one of the available types listed above");
-      console.error("    • Check your configuration file for custom types\n");
+      console.error(`\n  Fix: Use one of the types above with -t <type>\n`);
       process.exit(1);
     }
     return {
@@ -131,11 +127,15 @@ export async function promptScope(
       console.error(
         `\n✗ Error: Scope is required for commit type '${selectedType}'`,
       );
+      console.error("\n  Your configuration requires a scope for this commit type.");
+      console.error(`\n  Fix: Add scope with -s <scope> or run 'lab commit' interactively\n`);
       process.exit(1);
     }
     if (allowedScopes.length > 0 && !allowedScopes.includes(providedScope)) {
       console.error(`\n✗ Error: Invalid scope '${providedScope}'`);
-      console.error(`\n  Allowed scopes: ${allowedScopes.join(", ")}\n`);
+      console.error("\n  This scope is not allowed in your configuration.");
+      console.error(`\n  Allowed scopes: ${allowedScopes.join(", ")}`);
+      console.error(`\n  Fix: Use one of the allowed scopes with -s <scope>\n`);
       process.exit(1);
     }
     return providedScope || undefined;
@@ -263,14 +263,14 @@ export async function promptSubject(
   if (providedMessage) {
     const errors = validateSubject(config, providedMessage);
     if (errors.length > 0) {
-      console.error("\n✗ Validation failed:");
+      console.error("\n✗ Commit subject validation failed:");
       for (const error of errors) {
-        console.error(`  • ${error.message}`);
+        console.error(`\n  • ${error.message}`);
         if (error.context) {
           console.error(`    ${error.context}`);
         }
       }
-      console.error();
+      console.error(`\n  Fix: Correct the subject and try again, or run 'lab commit' interactively\n`);
       process.exit(1);
     }
     return providedMessage;
@@ -387,6 +387,7 @@ function validateBody(
 export async function promptBody(
   config: LabcommitrConfig,
   initialBody?: string | undefined,
+  providedBody?: string | undefined,
 ): Promise<string | undefined> {
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
@@ -394,6 +395,25 @@ export async function promptBody(
 
   // Explicitly check if body is required (handle potential type coercion)
   const isRequired = bodyConfig.required === true;
+
+  // If body provided via CLI flag, validate it
+  if (providedBody !== undefined) {
+    const errors = validateBody(config, providedBody);
+    if (errors.length > 0) {
+      console.error("\n✗ Commit body validation failed:");
+      for (const error of errors) {
+        console.error(`\n  • ${error.message}`);
+        if (error.context) {
+          console.error(`    ${error.context}`);
+        }
+      }
+      console.error(
+        `\n  Fix: Correct the body and try again, or run 'lab commit' interactively\n`,
+      );
+      process.exit(1);
+    }
+    return providedBody || undefined;
+  }
 
   // If editor preference is "editor" but no editor available, fall back to inline
   if (preference === "editor" && !editorAvailable) {
