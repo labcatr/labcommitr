@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for labcommitr configuration system
- * 
+ *
  * This file defines the core types used throughout the config loading system,
  * ensuring type safety and clear contracts between components.
  */
@@ -16,6 +16,21 @@ export interface CommitType {
   description: string;
   /** Emoji representation for terminal display */
   emoji?: string;
+}
+
+/**
+ * Commit message body configuration
+ * Controls how commit message body/description is collected and validated
+ */
+export interface BodyConfig {
+  /** Whether commit body is required (default: false) */
+  required: boolean;
+  /** Minimum length when body is provided (default: 0 = no minimum) */
+  min_length: number;
+  /** Maximum length (null = unlimited, default: null) */
+  max_length: number | null;
+  /** Preferred editor for body input (default: "auto") */
+  editor_preference: "auto" | "inline" | "editor";
 }
 
 /**
@@ -38,6 +53,8 @@ export interface LabcommitrConfig {
     template: string;
     /** Maximum length for commit subject line */
     subject_max_length: number;
+    /** Configuration for commit message body/description */
+    body: BodyConfig;
   };
   /** Array of available commit types (presence = enabled) */
   types: CommitType[];
@@ -51,6 +68,8 @@ export interface LabcommitrConfig {
     subject_min_length: number;
     /** Words prohibited in commit subjects */
     prohibited_words: string[];
+    /** Words prohibited in commit body (separate from subject) */
+    prohibited_words_body: string[];
   };
   /** Advanced configuration options */
   advanced: {
@@ -75,15 +94,15 @@ export interface RawConfig {
   /** Schema version for future compatibility */
   version?: string;
   /** Basic configuration settings */
-  config?: Partial<LabcommitrConfig['config']>;
+  config?: Partial<LabcommitrConfig["config"]>;
   /** Commit message formatting rules */
-  format?: Partial<LabcommitrConfig['format']>;
+  format?: Partial<LabcommitrConfig["format"]>;
   /** Array of available commit types - REQUIRED FIELD */
   types: CommitType[];
   /** Validation rules for commit messages */
-  validation?: Partial<LabcommitrConfig['validation']>;
+  validation?: Partial<LabcommitrConfig["validation"]>;
   /** Advanced configuration options */
-  advanced?: Partial<LabcommitrConfig['advanced']>;
+  advanced?: Partial<LabcommitrConfig["advanced"]>;
 }
 
 /**
@@ -94,7 +113,7 @@ export interface ConfigLoadResult {
   /** The fully processed configuration */
   config: LabcommitrConfig;
   /** Source of the configuration */
-  source: 'project' | 'global' | 'defaults';
+  source: "project" | "global" | "defaults";
   /** Absolute path to config file (if loaded from file) */
   path?: string;
   /** Timestamp when config was loaded */
@@ -111,7 +130,7 @@ export interface ProjectRoot {
   /** Absolute path to the project root directory */
   path: string;
   /** Type of marker that identified this as project root */
-  markerType: 'git' | 'package.json' | 'filesystem-root';
+  markerType: "git" | "package.json" | "filesystem-root";
   /** Whether this appears to be a monorepo structure */
   isMonorepo: boolean;
   /** Paths to detected subprojects (if any) */
@@ -144,15 +163,25 @@ export interface ValidationResult {
 
 /**
  * Individual validation error
- * Provides specific information about what failed validation
+ * Provides specific information about what failed validation with rich context
  */
 export interface ValidationError {
-  /** The configuration field that failed validation */
+  /** Technical field path (e.g., "types[0].id") */
   field: string;
-  /** Human-readable error message */
+  /** User-friendly field description (e.g., "Commit type #1 → ID field") */
+  fieldDisplay: string;
+  /** Technical error message for developers */
   message: string;
-  /** The actual value that failed validation */
+  /** User-friendly error explanation */
+  userMessage: string;
+  /** The actual problematic value */
   value?: unknown;
+  /** What format/type was expected */
+  expectedFormat?: string;
+  /** Array of valid example values */
+  examples?: string[];
+  /** Specific issue identified (e.g., "Contains dash (-)") */
+  issue?: string;
 }
 
 /**
@@ -162,7 +191,7 @@ export interface ValidationError {
 export class ConfigError extends Error {
   /**
    * Creates a new configuration error with user-friendly messaging
-   * 
+   *
    * @param message - Primary error message (what went wrong)
    * @param details - Technical details about the error
    * @param solutions - Array of actionable solutions for the user
@@ -172,33 +201,33 @@ export class ConfigError extends Error {
     message: string,
     public readonly details: string,
     public readonly solutions: string[],
-    public readonly filePath?: string
+    public readonly filePath?: string,
   ) {
     super(message);
-    this.name = 'ConfigError';
-    
+    this.name = "ConfigError";
+
     // Ensure proper prototype chain for instanceof checks
     Object.setPrototypeOf(this, ConfigError.prototype);
   }
-  
+
   /**
    * Formats the error for display to users
    * Includes the message, details, and actionable solutions
    */
   public formatForUser(): string {
     let output = `❌ ${this.message}\n`;
-    
+
     if (this.details) {
       output += `\nDetails: ${this.details}\n`;
     }
-    
+
     if (this.solutions.length > 0) {
       output += `\nSolutions:\n`;
-      this.solutions.forEach(solution => {
+      this.solutions.forEach((solution) => {
         output += `  ${solution}\n`;
       });
     }
-    
+
     return output;
   }
 }

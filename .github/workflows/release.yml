@@ -50,7 +50,7 @@ jobs:
           commit: "[ci] release"
           title: "[ci] release"
         env:
-          # Needs access to push to main
-          GITHUB_TOKEN: ${{ secrets.VOXEL_GITHUB_TOKEN }}
+          # Uses built-in GITHUB_TOKEN (automatically available, no secret needed)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Needs access to publish to npm
           NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
