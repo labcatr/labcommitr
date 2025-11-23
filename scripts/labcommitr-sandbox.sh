@@ -44,32 +44,74 @@ find_existing_sandbox() {
   return 1
 }
 
+# Function to detect if we're in a sandbox directory
+detect_sandbox_dir() {
+  local current_dir="$(pwd)"
+  local abs_current_dir="$(cd "$current_dir" && pwd)"
+  
+  # Check if current directory is within .sandbox/
+  if [[ "$abs_current_dir" == *"/.sandbox/"* ]]; then
+    # Find the .sandbox base directory
+    local sandbox_base="${abs_current_dir%/.sandbox/*}/.sandbox"
+    
+    # Check if .sandbox directory exists
+    if [ ! -d "$sandbox_base" ]; then
+      return 1
+    fi
+    
+    # Get the path after .sandbox/
+    local relative_path="${abs_current_dir#${sandbox_base}/}"
+    
+    # Extract the first directory name (sandbox name)
+    local sandbox_name="${relative_path%%/*}"
+    
+    # Construct full sandbox path
+    local sandbox_dir="$sandbox_base/$sandbox_name"
+    
+    # Verify it's actually a git repository (sandbox marker)
+    if [ -d "$sandbox_dir/.git" ]; then
+      echo "$sandbox_dir"
+      return 0
+    fi
+  fi
+  return 1
+}
+
 # Function to display usage
 show_usage() {
   echo "Usage: $0 [OPTIONS]"
   echo ""
   echo "Options:"
-  echo "  --reset     Quick reset: reset git state without full recreation"
-  echo "  --clean     Remove sandbox directory entirely"
-  echo "  --no-config Create sandbox without copying config (start from scratch)"
-  echo "  --help      Show this help message"
+  echo "  --reset           Quick reset: reset git state without full recreation"
+  echo "  --preserve-config Preserve .labcommitr.config.yaml during reset (use with --reset)"
+  echo "  --clean           Remove sandbox directory entirely"
+  echo "  --no-config       Create sandbox without copying config (start from scratch)"
+  echo "  --help            Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0              # Create or recreate sandbox (with config if available)"
-  echo "  $0 --no-config  # Create sandbox without config (run 'lab init' yourself)"
-  echo "  $0 --reset      # Quick reset (faster, keeps repo structure)"
-  echo "  $0 --clean      # Remove sandbox completely"
+  echo "  $0                        # Create or recreate sandbox (with config if available)"
+  echo "  $0 --no-config            # Create sandbox without config (run 'lab init' yourself)"
+  echo "  $0 --reset                # Quick reset (faster, keeps repo structure)"
+  echo "  $0 --reset --preserve-config # Quick reset, preserve config file"
+  echo "  $0 --clean                 # Remove sandbox completely"
+  echo ""
+  echo "Note: Can be run from within sandbox directory or project root"
 }
 
 # Parse arguments
 RESET_MODE=false
 CLEAN_MODE=false
 NO_CONFIG=false
+PRESERVE_CONFIG=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --reset)
       RESET_MODE=true
+      shift
+      ;;
+    --preserve-config)
+      PRESERVE_CONFIG=true
       shift
       ;;
     --clean)
@@ -112,8 +154,16 @@ fi
 
 # Handle reset mode
 if [ "$RESET_MODE" = true ]; then
-  SANDBOX_DIR=$(find_existing_sandbox)
-  if [ -z "$SANDBOX_DIR" ]; then
+  # Try to detect if we're in a sandbox directory first
+  DETECTED_SANDBOX=$(detect_sandbox_dir)
+  if [ -n "$DETECTED_SANDBOX" ] && [ -d "$DETECTED_SANDBOX" ]; then
+    SANDBOX_DIR="$DETECTED_SANDBOX"
+  else
+    # Fall back to finding existing sandbox from project root
+    SANDBOX_DIR=$(find_existing_sandbox)
+  fi
+  
+  if [ -z "$SANDBOX_DIR" ] || [ ! -d "$SANDBOX_DIR" ]; then
     echo -e "${RED}Error: No existing sandbox found. Run without --reset to create one.${NC}"
     exit 1
   fi
@@ -125,9 +175,24 @@ if [ "$RESET_MODE" = true ]; then
   echo -e "${GREEN}✓${NC} Resetting sandbox: $SANDBOX_DIR"
   cd "$SANDBOX_DIR"
   
+  # Preserve config if requested
+  CONFIG_BACKUP=""
+  if [ "$PRESERVE_CONFIG" = true ] && [ -f ".labcommitr.config.yaml" ]; then
+    CONFIG_BACKUP=$(mktemp)
+    cp ".labcommitr.config.yaml" "$CONFIG_BACKUP"
+    echo -e "${GREEN}✓${NC} Preserving config file..."
+  fi
+  
   # Reset git state
   git reset --hard HEAD 2>/dev/null || true
   git clean -fd 2>/dev/null || true
+  
+  # Restore config if preserved
+  if [ -n "$CONFIG_BACKUP" ] && [ -f "$CONFIG_BACKUP" ]; then
+    cp "$CONFIG_BACKUP" ".labcommitr.config.yaml"
+    rm "$CONFIG_BACKUP"
+    echo -e "${GREEN}✓${NC} Config file restored"
+  fi
   
   # Ensure directories exist (they might have been removed by git clean)
   mkdir -p src docs lib utils
@@ -201,6 +266,13 @@ EOF
   echo "# Pre-staged file" > pre-staged.ts
   git add pre-staged.ts
   
+  # Always ensure reset script is present and up-to-date
+  if [ -f "$SCRIPT_DIR/reset-sandbox.sh" ]; then
+    cp "$SCRIPT_DIR/reset-sandbox.sh" "reset-sandbox.sh"
+    chmod +x "reset-sandbox.sh"
+    echo -e "${GREEN}✓${NC} Reset script updated"
+  fi
+  
   echo ""
   echo -e "${GREEN}✓${NC} Sandbox reset complete!"
   echo ""
@@ -209,6 +281,10 @@ EOF
   echo -e "${YELLOW}To test:${NC}"
   echo "  cd $SANDBOX_DIR"
   echo "  node $PROJECT_ROOT/dist/index.js commit"
+  echo ""
+  echo -e "${YELLOW}To reset again (from within sandbox):${NC}"
+  echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh --reset"
+  echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh --reset --preserve-config"
   echo ""
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   exit 0
@@ -252,6 +328,12 @@ if [ "$NO_CONFIG" = false ]; then
   fi
 else
   echo -e "${YELLOW}⚠  Sandbox created without config. Run 'lab init' to set up configuration.${NC}"
+fi
+
+# Copy reset script for convenience
+if [ -f "$SCRIPT_DIR/reset-sandbox.sh" ]; then
+  cp "$SCRIPT_DIR/reset-sandbox.sh" "$SANDBOX_DIR/reset-sandbox.sh"
+  chmod +x "$SANDBOX_DIR/reset-sandbox.sh"
 fi
 
 # Create initial commit
@@ -457,14 +539,19 @@ echo -e "${YELLOW}To test:${NC}"
 echo "  cd $SANDBOX_DIR"
 echo "  node $PROJECT_ROOT/dist/index.js commit"
 echo ""
-echo -e "${YELLOW}To reset (quick):${NC}"
-echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh --reset"
+echo -e "${YELLOW}To reset (from within sandbox):${NC}"
+echo "  bash reset-sandbox.sh                    # Reset, remove config"
+echo "  bash reset-sandbox.sh --preserve-config   # Reset, keep config"
+echo ""
+echo -e "${YELLOW}To reset (from project root):${NC}"
+echo "  pnpm run test:sandbox:reset               # Reset, remove config"
+echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh --reset --preserve-config  # Reset, keep config"
 echo ""
 echo -e "${YELLOW}To reset (full recreation):${NC}"
-echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh"
+echo "  pnpm run test:sandbox"
 echo ""
 echo -e "${YELLOW}To clean up:${NC}"
-echo "  bash $SCRIPT_DIR/labcommitr-sandbox.sh --clean"
+echo "  pnpm run test:sandbox:clean"
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
