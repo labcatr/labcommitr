@@ -370,6 +370,150 @@ export class ConfigValidator {
         expectedFormat: "object with advanced configuration",
         issue: "Found non-object value",
       });
+    } else if (config.advanced) {
+      // Validate shortcuts if present in advanced section
+      errors.push(...this.validateShortcuts(config));
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validate shortcuts configuration
+   * @param config - Configuration object to validate
+   * @returns Array of validation errors (empty if valid)
+   */
+  private validateShortcuts(config: RawConfig): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    if (!config.advanced?.shortcuts) {
+      return errors; // Optional section, skip if not present
+    }
+
+    const shortcuts = config.advanced.shortcuts;
+
+    // Validate enabled
+    if (shortcuts.enabled !== undefined && typeof shortcuts.enabled !== "boolean") {
+      errors.push({
+        field: "advanced.shortcuts.enabled",
+        fieldDisplay: "Shortcuts → Enabled",
+        message: 'Field "enabled" must be a boolean',
+        userMessage: "The shortcuts enabled setting must be true or false",
+        value: shortcuts.enabled,
+        expectedFormat: "boolean (true or false)",
+        issue: "Found non-boolean value",
+      });
+    }
+
+    // Validate display_hints
+    if (shortcuts.display_hints !== undefined && typeof shortcuts.display_hints !== "boolean") {
+      errors.push({
+        field: "advanced.shortcuts.display_hints",
+        fieldDisplay: "Shortcuts → Display Hints",
+        message: 'Field "display_hints" must be a boolean',
+        userMessage: "The display hints setting must be true or false",
+        value: shortcuts.display_hints,
+        expectedFormat: "boolean (true or false)",
+        issue: "Found non-boolean value",
+      });
+    }
+
+    // Validate prompts structure
+    if (shortcuts.prompts !== undefined) {
+      if (typeof shortcuts.prompts !== "object" || Array.isArray(shortcuts.prompts)) {
+        errors.push({
+          field: "advanced.shortcuts.prompts",
+          fieldDisplay: "Shortcuts → Prompts",
+          message: 'Field "prompts" must be an object',
+          userMessage: "The prompts section must be an object with prompt names as keys",
+          value: shortcuts.prompts,
+          expectedFormat: "object with prompt configurations",
+          issue: "Found non-object value",
+        });
+        return errors; // Can't validate further if structure is wrong
+      }
+
+      // Validate each prompt's mapping
+      const promptNames = ["type", "preview", "body"] as const;
+      for (const promptName of promptNames) {
+        const promptConfig = shortcuts.prompts[promptName];
+        if (promptConfig !== undefined) {
+          if (typeof promptConfig !== "object" || Array.isArray(promptConfig)) {
+            errors.push({
+              field: `advanced.shortcuts.prompts.${promptName}`,
+              fieldDisplay: `Shortcuts → Prompts → ${promptName}`,
+              message: `Prompt config for "${promptName}" must be an object`,
+              userMessage: `The ${promptName} prompt configuration must be an object`,
+              value: promptConfig,
+              expectedFormat: "object with mapping field",
+              issue: "Found non-object value",
+            });
+            continue;
+          }
+
+          // Validate mapping
+          if (promptConfig.mapping !== undefined) {
+            if (typeof promptConfig.mapping !== "object" || Array.isArray(promptConfig.mapping)) {
+              errors.push({
+                field: `advanced.shortcuts.prompts.${promptName}.mapping`,
+                fieldDisplay: `Shortcuts → Prompts → ${promptName} → Mapping`,
+                message: `Mapping for "${promptName}" must be an object`,
+                userMessage: `The mapping for ${promptName} must be an object with key-value pairs`,
+                value: promptConfig.mapping,
+                expectedFormat: "object with shortcut keys and option values",
+                issue: "Found non-object value",
+              });
+              continue;
+            }
+
+            // Validate mapping keys and values
+            const usedKeys = new Set<string>();
+            for (const [key, value] of Object.entries(promptConfig.mapping)) {
+              // Validate key (must be single lowercase letter)
+              if (!/^[a-z]$/.test(key)) {
+                errors.push({
+                  field: `advanced.shortcuts.prompts.${promptName}.mapping.${key}`,
+                  fieldDisplay: `Shortcuts → Prompts → ${promptName} → Mapping → Key "${key}"`,
+                  message: `Shortcut key must be a single lowercase letter (a-z)`,
+                  userMessage: `Shortcut keys must be single letters (a-z)`,
+                  value: key,
+                  expectedFormat: "single lowercase letter (a-z)",
+                  issue: `Invalid shortcut key format`,
+                });
+              }
+
+              // Check for duplicate keys (case-insensitive)
+              const normalizedKey = key.toLowerCase();
+              if (usedKeys.has(normalizedKey)) {
+                errors.push({
+                  field: `advanced.shortcuts.prompts.${promptName}.mapping`,
+                  fieldDisplay: `Shortcuts → Prompts → ${promptName} → Mapping`,
+                  message: `Duplicate shortcut key "${key}"`,
+                  userMessage: `The shortcut "${key}" is used for multiple options`,
+                  value: promptConfig.mapping,
+                  expectedFormat: "unique shortcut keys",
+                  issue: `Shortcut "${key}" appears multiple times`,
+                  examples: [`Use different letters for each option`],
+                });
+              }
+              usedKeys.add(normalizedKey);
+
+              // Validate value (must be string)
+              if (typeof value !== "string") {
+                errors.push({
+                  field: `advanced.shortcuts.prompts.${promptName}.mapping.${key}`,
+                  fieldDisplay: `Shortcuts → Prompts → ${promptName} → Mapping → Value for "${key}"`,
+                  message: `Mapping value must be a string`,
+                  userMessage: `The option value for shortcut "${key}" must be text`,
+                  value: value,
+                  expectedFormat: "string (option value)",
+                  issue: "Found non-string value",
+                });
+              }
+            }
+          }
+        }
+      }
     }
 
     return errors;

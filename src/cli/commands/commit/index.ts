@@ -441,7 +441,7 @@ export async function commitAction(options: {
         );
 
         // Show preview and get user action
-        action = await displayPreview(formattedMessage, body);
+        action = await displayPreview(formattedMessage, body, config);
 
         // Handle edit actions
         if (action === "edit-type") {

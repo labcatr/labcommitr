@@ -6,7 +6,7 @@
  * These defaults are merged with user-provided configuration to create the final config.
  */
 
-import type { LabcommitrConfig, RawConfig } from "./types.js";
+import type { LabcommitrConfig, RawConfig, ShortcutsConfig } from "./types.js";
 
 /**
  * Complete default configuration object
@@ -75,6 +75,11 @@ export const DEFAULT_CONFIG: LabcommitrConfig = {
       auto_stage: false,
       // Don't auto-sign commits (user configures as needed)
       sign_commits: false,
+    },
+    // Shortcuts enabled by default for better UX
+    shortcuts: {
+      enabled: true,
+      display_hints: true,
     },
   },
 };
@@ -171,6 +176,15 @@ export function mergeWithDefaults(rawConfig: RawConfig): LabcommitrConfig {
       merged.advanced.git = {
         ...merged.advanced.git,
         ...rawConfig.advanced.git,
+      };
+    }
+
+    // Handle nested shortcuts configuration
+    if (rawConfig.advanced.shortcuts) {
+      merged.advanced.shortcuts = {
+        enabled: rawConfig.advanced.shortcuts.enabled ?? merged.advanced.shortcuts?.enabled ?? true,
+        display_hints: rawConfig.advanced.shortcuts.display_hints ?? merged.advanced.shortcuts?.display_hints ?? true,
+        prompts: rawConfig.advanced.shortcuts.prompts ?? merged.advanced.shortcuts?.prompts,
       };
     }
   }
