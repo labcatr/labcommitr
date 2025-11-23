@@ -15,8 +15,13 @@ pnpm run test:sandbox:bare
 cd .sandbox/*/
 node ../../dist/index.js commit
 
-# Quick reset (faster, keeps repo structure)
-pnpm run test:sandbox:reset
+# Quick reset from within sandbox (easiest!)
+bash reset-sandbox.sh                    # Reset, remove config
+bash reset-sandbox.sh --preserve-config # Reset, keep config
+
+# Quick reset from project root
+pnpm run test:sandbox:reset              # Reset, remove config
+bash scripts/labcommitr-sandbox.sh --reset --preserve-config  # Reset, keep config
 
 # Full recreation (slower, completely fresh)
 pnpm run test:sandbox
@@ -121,17 +126,34 @@ lab commit
 
 ### Resetting the Sandbox
 
-You have two reset options:
+You have multiple reset options depending on your needs:
 
-**Quick Reset** (recommended for iterative testing)
+**Quick Reset from Within Sandbox** (easiest for iterative testing)
 ```bash
-pnpm run test:sandbox:reset
-# or
-bash scripts/labcommitr-sandbox.sh --reset
+# From within the sandbox directory
+cd .sandbox/*/
+
+# Reset (removes config file)
+bash reset-sandbox.sh
+
+# Reset and preserve config file
+bash reset-sandbox.sh --preserve-config
 ```
+- Can be run from within the sandbox directory
 - Faster (keeps repository structure)
 - Resets git state and re-applies test file changes
-- Use this when you want to test again quickly
+- Option to preserve `.labcommitr.config.yaml` file
+
+**Quick Reset from Project Root**
+```bash
+# Reset (removes config file)
+pnpm run test:sandbox:reset
+
+# Reset and preserve config file
+bash scripts/labcommitr-sandbox.sh --reset --preserve-config
+```
+- Must be run from project root
+- Same functionality as reset from within sandbox
 
 **Full Recreation** (slower but completely fresh)
 ```bash
@@ -356,11 +378,26 @@ bash scripts/labcommitr-sandbox.sh --no-config
 # Quick reset (faster, keeps repo structure)
 bash scripts/labcommitr-sandbox.sh --reset
 
+# Quick reset with config preservation
+bash scripts/labcommitr-sandbox.sh --reset --preserve-config
+
 # Remove sandbox completely
 bash scripts/labcommitr-sandbox.sh --clean
 
 # Show help
 bash scripts/labcommitr-sandbox.sh --help
+```
+
+**Note:** The script can detect if it's being run from within a sandbox directory and will automatically use that sandbox for reset operations.
+
+### Reset Script (Within Sandbox)
+
+Each sandbox includes a `reset-sandbox.sh` script for convenience:
+
+```bash
+# From within sandbox directory
+bash reset-sandbox.sh                    # Reset, remove config
+bash reset-sandbox.sh --preserve-config  # Reset, keep config
 ```
 
 ---
