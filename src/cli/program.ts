@@ -17,6 +17,9 @@ import { dirname, join } from "path";
 import { configCommand } from "./commands/config.js";
 import { initCommand } from "./commands/init/index.js";
 import { commitCommand } from "./commands/commit.js";
+import { previewCommand } from "./commands/preview/index.js";
+import { revertCommand } from "./commands/revert/index.js";
+import { testCommand } from "./commands/test/index.js";
 
 // Get package.json for version info
 const __filename = fileURLToPath(import.meta.url);
@@ -45,6 +48,9 @@ program
 program.addCommand(configCommand);
 program.addCommand(initCommand);
 program.addCommand(commitCommand);
+program.addCommand(previewCommand);
+program.addCommand(revertCommand);
+program.addCommand(testCommand);
 
 // Customize help text
 program.addHelpText(
@@ -53,7 +59,11 @@ program.addHelpText(
 Examples:
   $ labcommitr init              Initialize config in current project
   $ lab commit                   Create a standardized commit (interactive)
-  $ lab config show              Display current configuration
+  $ lab preview                   Browse commit history
+  $ lab revert                    Revert a commit using commit workflow
+  $ lab config show               Display current configuration
+  $ lab test setup               Set up test environment
+  $ lab test shell               Open shell in test environment
 
 Documentation:
   https://github.com/labcatr/labcommitr#readme
