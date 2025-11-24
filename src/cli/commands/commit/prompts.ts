@@ -13,6 +13,12 @@ import type {
 } from "../../../lib/config/types.js";
 import type { ValidationError } from "./types.js";
 import { editInEditor, detectEditor } from "./editor.js";
+import {
+  processShortcuts,
+  formatLabelWithShortcut,
+  getShortcutForValue,
+} from "../../../lib/shortcuts/index.js";
+import { selectWithShortcuts } from "../../../lib/shortcuts/select-with-shortcuts.js";
 
 /**
  * Create compact color-coded label
@@ -62,6 +68,7 @@ function handleCancel(value: unknown): void {
 export async function promptType(
   config: LabcommitrConfig,
   providedType?: string,
+  initialType?: string,
 ): Promise<{ type: string; emoji?: string }> {
   // If type provided via CLI flag, validate it
   if (providedType) {
@@ -71,14 +78,10 @@ export async function promptType(
         .map((t) => `  • ${t.id} - ${t.description}`)
         .join("\n");
       console.error(`\n✗ Error: Invalid commit type '${providedType}'`);
-      console.error(
-        "\n  The commit type is not defined in your configuration.",
-      );
+      console.error("\n  This type is not defined in your configuration.");
       console.error("\n  Available types:");
       console.error(available);
-      console.error("\n  Solutions:");
-      console.error("    • Use one of the available types listed above");
-      console.error("    • Check your configuration file for custom types\n");
+      console.error(`\n  Fix: Use one of the types above with -t <type>\n`);
       process.exit(1);
     }
     return {
@@ -87,14 +90,44 @@ export async function promptType(
     };
   }
 
-  const selected = await select({
-    message: `${label("type", "magenta")}  ${textColors.pureWhite("Select commit type:")}`,
-    options: config.types.map((type) => ({
-      value: type.id,
-      label: `${type.id.padEnd(8)} ${type.description}`,
-      hint: type.description,
+  // Process shortcuts for this prompt
+  const shortcutMapping = processShortcuts(
+    config.advanced.shortcuts,
+    "type",
+    config.types.map((t) => ({
+      value: t.id,
+      label: `${t.id.padEnd(8)} ${t.description}`,
     })),
+  );
+
+  const displayHints = config.advanced.shortcuts?.display_hints ?? true;
+
+  // Find initial type index if provided
+  const initialIndex = initialType
+    ? config.types.findIndex((t) => t.id === initialType)
+    : undefined;
+
+  // Build options with shortcuts
+  const options = config.types.map((type) => {
+    const shortcut = getShortcutForValue(type.id, shortcutMapping);
+    const baseLabel = `${type.id.padEnd(8)} ${type.description}`;
+    const label = formatLabelWithShortcut(baseLabel, shortcut, displayHints);
+
+    return {
+      value: type.id,
+      label,
+      hint: type.description,
+    };
   });
+
+  const selected = await selectWithShortcuts(
+    {
+      message: `${label("type", "magenta")}  ${textColors.pureWhite("Select commit type:")}`,
+      options,
+      initialValue: initialIndex !== undefined && initialIndex >= 0 ? config.types[initialIndex].id : undefined,
+    },
+    shortcutMapping,
+  );
 
   handleCancel(selected);
   const typeId = selected as string;
@@ -113,6 +146,7 @@ export async function promptScope(
   config: LabcommitrConfig,
   selectedType: string,
   providedScope?: string,
+  initialScope?: string | undefined,
 ): Promise<string | undefined> {
   const isRequired = config.validation.require_scope_for.includes(selectedType);
   const allowedScopes = config.validation.allowed_scopes;
@@ -123,11 +157,15 @@ export async function promptScope(
       console.error(
         `\n✗ Error: Scope is required for commit type '${selectedType}'`,
       );
+      console.error("\n  Your configuration requires a scope for this commit type.");
+      console.error(`\n  Fix: Add scope with -s <scope> or run 'lab commit' interactively\n`);
       process.exit(1);
     }
     if (allowedScopes.length > 0 && !allowedScopes.includes(providedScope)) {
       console.error(`\n✗ Error: Invalid scope '${providedScope}'`);
-      console.error(`\n  Allowed scopes: ${allowedScopes.join(", ")}\n`);
+      console.error("\n  This scope is not allowed in your configuration.");
+      console.error(`\n  Allowed scopes: ${allowedScopes.join(", ")}`);
+      console.error(`\n  Fix: Use one of the allowed scopes with -s <scope>\n`);
       process.exit(1);
     }
     return providedScope || undefined;
@@ -146,11 +184,17 @@ export async function promptScope(
       },
     ];
 
+    // Find initial scope index if provided
+    const initialIndex = initialScope
+      ? allowedScopes.findIndex((s) => s === initialScope)
+      : undefined;
+
     const selected = await select({
       message: `${label("scope", "blue")}  ${textColors.pureWhite(
         `Enter scope ${isRequired ? "(required for '" + selectedType + "')" : "(optional)"}:`,
       )}`,
       options,
+      initialValue: initialIndex !== undefined && initialIndex >= 0 ? allowedScopes[initialIndex] : initialScope || undefined,
     });
 
     handleCancel(selected);
@@ -158,7 +202,8 @@ export async function promptScope(
     if (selected === "__custom__") {
       const custom = await text({
         message: `${label("scope", "blue")}  ${textColors.pureWhite("Enter custom scope:")}`,
-        placeholder: "",
+        placeholder: initialScope || "",
+        initialValue: initialScope,
         validate: (value) => {
           if (isRequired && !value) {
             return "Scope is required for this commit type";
@@ -180,6 +225,7 @@ export async function promptScope(
       `Enter scope ${isRequired ? "(required)" : "(optional)"}:`,
     )}`,
     placeholder: "",
+    initialValue: initialScope,
     validate: (value) => {
       if (isRequired && !value) {
         return "Scope is required for this commit type";
@@ -242,24 +288,25 @@ function validateSubject(
 export async function promptSubject(
   config: LabcommitrConfig,
   providedMessage?: string,
+  initialSubject?: string,
 ): Promise<string> {
   if (providedMessage) {
     const errors = validateSubject(config, providedMessage);
     if (errors.length > 0) {
-      console.error("\n✗ Validation failed:");
+      console.error("\n✗ Commit subject validation failed:");
       for (const error of errors) {
-        console.error(`  • ${error.message}`);
+        console.error(`\n  • ${error.message}`);
         if (error.context) {
           console.error(`    ${error.context}`);
         }
       }
-      console.error();
+      console.error(`\n  Fix: Correct the subject and try again, or run 'lab commit' interactively\n`);
       process.exit(1);
     }
     return providedMessage;
   }
 
-  let subject: string | symbol = "";
+  let subject: string | symbol = initialSubject || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -280,6 +327,7 @@ export async function promptSubject(
         `Enter commit subject (max ${config.format.subject_max_length} chars):`,
       )}`,
       placeholder: "",
+      initialValue: typeof subject === "string" ? subject : initialSubject,
       validate: (value) => {
         const validationErrors = validateSubject(config, value);
         if (validationErrors.length > 0) {
@@ -368,6 +416,8 @@ function validateBody(
  */
 export async function promptBody(
   config: LabcommitrConfig,
+  initialBody?: string | undefined,
+  providedBody?: string | undefined,
 ): Promise<string | undefined> {
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
@@ -375,6 +425,25 @@ export async function promptBody(
 
   // Explicitly check if body is required (handle potential type coercion)
   const isRequired = bodyConfig.required === true;
+
+  // If body provided via CLI flag, validate it
+  if (providedBody !== undefined) {
+    const errors = validateBody(config, providedBody);
+    if (errors.length > 0) {
+      console.error("\n✗ Commit body validation failed:");
+      for (const error of errors) {
+        console.error(`\n  • ${error.message}`);
+        if (error.context) {
+          console.error(`    ${error.context}`);
+        }
+      }
+      console.error(
+        `\n  Fix: Correct the body and try again, or run 'lab commit' interactively\n`,
+      );
+      process.exit(1);
+    }
+    return providedBody || undefined;
+  }
 
   // If editor preference is "editor" but no editor available, fall back to inline
   if (preference === "editor" && !editorAvailable) {
@@ -386,41 +455,56 @@ export async function promptBody(
     // Fall through to inline input
   } else if (preference === "editor" && editorAvailable && !isRequired) {
     // Optional body with editor preference - use editor directly
-    const edited = await promptBodyWithEditor(config, "");
+    const edited = await promptBodyWithEditor(config, initialBody || "");
     return edited || undefined;
   } else if (preference === "editor" && editorAvailable && isRequired) {
     // Required body with editor preference - use editor with validation loop
-    return await promptBodyRequiredWithEditor(config);
+    return await promptBodyRequiredWithEditor(config, initialBody);
   }
 
   // Inline input path
   if (!isRequired) {
     // Optional body - offer choice if editor available and preference allows
     if (editorAvailable && preference === "auto") {
-      const inputMethod = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
-        options: [
-          {
-            value: "inline",
-            label: "Type inline (single/multi-line)",
-          },
-          {
-            value: "editor",
-            label: "Open in editor",
-          },
-          {
-            value: "skip",
-            label: "Skip (no body)",
-          },
-        ],
+      const bodyOptions = [
+        { value: "inline", label: "Type inline (single/multi-line)" },
+        { value: "editor", label: "Open in editor" },
+        { value: "skip", label: "Skip (no body)" },
+      ];
+
+      const shortcutMapping = processShortcuts(
+        config.advanced.shortcuts,
+        "body",
+        bodyOptions,
+      );
+      const displayHints = config.advanced.shortcuts?.display_hints ?? true;
+
+      const options = bodyOptions.map((option) => {
+        const shortcut = shortcutMapping
+          ? getShortcutForValue(option.value, shortcutMapping)
+          : undefined;
+        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+
+        return {
+          value: option.value,
+          label,
+        };
       });
+
+      const inputMethod = await selectWithShortcuts(
+        {
+          message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
+          options,
+        },
+        shortcutMapping,
+      );
 
       handleCancel(inputMethod);
 
       if (inputMethod === "skip") {
         return undefined;
       } else if (inputMethod === "editor") {
-        return await promptBodyWithEditor(config, "");
+        return await promptBodyWithEditor(config, initialBody || "");
       }
       // Fall through to inline
     }
@@ -428,6 +512,7 @@ export async function promptBody(
     const body = await text({
       message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
       placeholder: "Press Enter to skip",
+      initialValue: initialBody,
       validate: (value) => {
         if (!value) return undefined; // Empty is OK if optional
         const errors = validateBody(config, value);
@@ -443,7 +528,7 @@ export async function promptBody(
   }
 
   // Required body
-  let body: string | symbol = "";
+  let body: string | symbol = initialBody || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -461,26 +546,44 @@ export async function promptBody(
 
     // For required body, offer editor option if available and preference allows
     if (editorAvailable && (preference === "auto" || preference === "inline")) {
-      const inputMethod = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-        )}`,
-        options: [
-          {
-            value: "inline",
-            label: "Type inline",
-          },
-          {
-            value: "editor",
-            label: "Open in editor",
-          },
-        ],
+      const bodyOptions = [
+        { value: "inline", label: "Type inline" },
+        { value: "editor", label: "Open in editor" },
+      ];
+
+      const shortcutMapping = processShortcuts(
+        config.advanced.shortcuts,
+        "body",
+        bodyOptions,
+      );
+      const displayHints = config.advanced.shortcuts?.display_hints ?? true;
+
+      const options = bodyOptions.map((option) => {
+        const shortcut = shortcutMapping
+          ? getShortcutForValue(option.value, shortcutMapping)
+          : undefined;
+        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+
+        return {
+          value: option.value,
+          label,
+        };
       });
+
+      const inputMethod = await selectWithShortcuts(
+        {
+          message: `${label("body", "yellow")}  ${textColors.pureWhite(
+            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
+          )}`,
+          options,
+        },
+        shortcutMapping,
+      );
 
       handleCancel(inputMethod);
 
       if (inputMethod === "editor") {
-        const editorBody = await promptBodyWithEditor(config, body as string);
+        const editorBody = await promptBodyWithEditor(config, typeof body === "string" ? body : initialBody || "");
         if (editorBody !== null && editorBody !== undefined) {
           body = editorBody;
         } else {
@@ -494,6 +597,7 @@ export async function promptBody(
             `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
+          initialValue: typeof body === "string" ? body : initialBody,
           validate: (value) => {
             const validationErrors = validateBody(config, value);
             if (validationErrors.length > 0) {
@@ -512,6 +616,7 @@ export async function promptBody(
           `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         )}`,
         placeholder: "",
+        initialValue: typeof body === "string" ? body : initialBody,
         validate: (value) => {
           const validationErrors = validateBody(config, value);
           if (validationErrors.length > 0) {
@@ -537,9 +642,10 @@ export async function promptBody(
  */
 async function promptBodyRequiredWithEditor(
   config: LabcommitrConfig,
+  initialBody?: string,
 ): Promise<string> {
   const bodyConfig = config.format.body;
-  let body: string = "";
+  let body: string = initialBody || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -558,23 +664,38 @@ async function promptBodyRequiredWithEditor(
     const edited = await promptBodyWithEditor(config, body);
     if (edited === null || edited === undefined) {
       // Editor cancelled, ask what to do
-      const choice = await select({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite("Editor cancelled. What would you like to do?")}`,
-        options: [
-          {
-            value: "retry",
-            label: "Try editor again",
-          },
-          {
-            value: "inline",
-            label: "Switch to inline input",
-          },
-          {
-            value: "cancel",
-            label: "Cancel commit",
-          },
-        ],
+      const bodyRetryOptions = [
+        { value: "retry", label: "Try editor again" },
+        { value: "inline", label: "Switch to inline input" },
+        { value: "cancel", label: "Cancel commit" },
+      ];
+
+      const shortcutMapping = processShortcuts(
+        config.advanced.shortcuts,
+        "body",
+        bodyRetryOptions,
+      );
+      const displayHints = config.advanced.shortcuts?.display_hints ?? true;
+
+      const options = bodyRetryOptions.map((option) => {
+        const shortcut = shortcutMapping
+          ? getShortcutForValue(option.value, shortcutMapping)
+          : undefined;
+        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+
+        return {
+          value: option.value,
+          label,
+        };
       });
+
+      const choice = await selectWithShortcuts(
+        {
+          message: `${label("body", "yellow")}  ${textColors.pureWhite("Editor cancelled. What would you like to do?")}`,
+          options,
+        },
+        shortcutMapping,
+      );
 
       handleCancel(choice);
 
@@ -588,6 +709,7 @@ async function promptBodyRequiredWithEditor(
             `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           )}`,
           placeholder: "",
+          initialValue: body,
           validate: (value) => {
             const validationErrors = validateBody(config, value);
             if (validationErrors.length > 0) {
@@ -650,23 +772,38 @@ async function promptBodyWithEditor(
     console.log();
 
     // Ask if user wants to re-edit or go back to inline
-    const choice = await select({
-      message: `${label("body", "yellow")}  ${textColors.pureWhite("Validation failed. What would you like to do?")}`,
-      options: [
-        {
-          value: "re-edit",
-          label: "Edit again",
-        },
-        {
-          value: "inline",
-          label: "Type inline instead",
-        },
-        {
-          value: "cancel",
-          label: "Cancel commit",
-        },
-      ],
+    const bodyValidationOptions = [
+      { value: "re-edit", label: "Edit again" },
+      { value: "inline", label: "Type inline instead" },
+      { value: "cancel", label: "Cancel commit" },
+    ];
+
+    const shortcutMapping = processShortcuts(
+      config.advanced.shortcuts,
+      "body",
+      bodyValidationOptions,
+    );
+    const displayHints = config.advanced.shortcuts?.display_hints ?? true;
+
+    const options = bodyValidationOptions.map((option) => {
+      const shortcut = shortcutMapping
+        ? getShortcutForValue(option.value, shortcutMapping)
+        : undefined;
+      const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+
+      return {
+        value: option.value,
+        label,
+      };
     });
+
+    const choice = await selectWithShortcuts(
+      {
+        message: `${label("body", "yellow")}  ${textColors.pureWhite("Validation failed. What would you like to do?")}`,
+        options,
+      },
+      shortcutMapping,
+    );
 
     handleCancel(choice);
 
@@ -902,11 +1039,13 @@ export async function displayStagedFiles(status: {
  * Display commit message preview with connector line support
  * Uses @clack/prompts log.info() to start connector, then manually
  * renders connector lines for multi-line preview content.
+ * Returns the action the user selected: "commit", "edit-type", "edit-scope", "edit-subject", "edit-body", or "cancel"
  */
 export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
-): Promise<boolean> {
+  config?: LabcommitrConfig,
+): Promise<"commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel"> {
   // Start connector line using @clack/prompts
   log.info(
     `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
@@ -931,20 +1070,47 @@ export async function displayPreview(
     renderWithConnector("─────────────────────────────────────────────"),
   );
 
-  const confirmed = await select({
-    message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
-    options: [
-      {
-        value: true,
-        label: "Yes, create commit",
-      },
-      {
-        value: false,
-        label: "No, let me edit",
-      },
-    ],
+  // Process shortcuts for preview prompt
+  const previewOptions = [
+    { value: "commit", label: "Create commit" },
+    { value: "edit-type", label: "Edit type" },
+    { value: "edit-scope", label: "Edit scope" },
+    { value: "edit-subject", label: "Edit subject" },
+    { value: "edit-body", label: "Edit body" },
+    { value: "cancel", label: "Cancel" },
+  ];
+
+  const shortcutMapping = config
+    ? processShortcuts(
+        config.advanced.shortcuts,
+        "preview",
+        previewOptions,
+      )
+    : null;
+
+  const displayHints = config?.advanced.shortcuts?.display_hints ?? true;
+
+  // Build options with shortcuts
+  const options = previewOptions.map((option) => {
+    const shortcut = shortcutMapping
+      ? getShortcutForValue(option.value, shortcutMapping)
+      : undefined;
+    const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+
+    return {
+      value: option.value,
+      label,
+    };
   });
 
-  handleCancel(confirmed);
-  return confirmed as boolean;
+  const action = await selectWithShortcuts(
+    {
+      message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
+      options,
+    },
+    shortcutMapping,
+  );
+
+  handleCancel(action);
+  return action as "commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel";
 }

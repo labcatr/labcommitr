@@ -63,6 +63,46 @@ export function getPreset(id: string): Preset {
 }
 
 /**
+ * Generate default shortcut mappings for commit types
+ * Creates sensible single-letter shortcuts based on type IDs
+ *
+ * @param types - Array of commit types from preset
+ * @returns Record mapping shortcut key → type ID
+ */
+function generateDefaultShortcuts(
+  types: Array<{ id: string }>,
+): Record<string, string> {
+  const mappings: Record<string, string> = {};
+  const usedKeys = new Set<string>();
+
+  for (const type of types) {
+    const normalized = type.id.toLowerCase();
+    let key: string | null = null;
+    let index = 0;
+
+    // Try each character in the type ID to find first available letter
+    while (index < normalized.length && !key) {
+      const char = normalized[index];
+      // Only use letters (a-z)
+      if (char >= "a" && char <= "z" && !usedKeys.has(char)) {
+        key = char;
+        break;
+      }
+      index++;
+    }
+
+    // Assign shortcut if available letter found
+    if (key) {
+      mappings[key] = type.id;
+      usedKeys.add(key);
+    }
+    // If no available letter, type works with arrow keys only (no shortcut)
+  }
+
+  return mappings;
+}
+
+/**
  * Build complete configuration from preset and user choices
  * Merges preset defaults with user customizations
  */
@@ -90,6 +130,9 @@ export function buildConfig(
   } else if (scopeMode === "selective" && customizations.scopeRequiredFor) {
     requireScopeFor = customizations.scopeRequiredFor;
   }
+
+  // Generate default shortcut mappings for commit types
+  const typeShortcuts = generateDefaultShortcuts(preset.types);
 
   return {
     version: "1.0",
@@ -123,6 +166,15 @@ export function buildConfig(
         auto_stage: customizations.autoStage ?? false,
         // Security best-practice: enable signed commits by default
         sign_commits: true,
+      },
+      shortcuts: {
+        enabled: true, // Enabled by default for better UX
+        display_hints: true, // Show hints when enabled
+        prompts: {
+          type: {
+            mapping: typeShortcuts, // Pre-configured shortcuts for commit types
+          },
+        },
       },
     },
   };

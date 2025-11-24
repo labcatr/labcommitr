@@ -10,8 +10,10 @@
     "format:ci": "pnpm run format:code",
     "format:code": "prettier -w \"**/*\" --ignore-unknown --cache",
     "version": "changeset version && pnpm install --no-frozen-lockfile && pnpm run format",
-    "test:commit:sandbox": "bash scripts/test-commit-sandbox.sh",
-    "test:commit:reset": "bash scripts/reset-sandbox.sh"
+    "test:sandbox": "bash scripts/labcommitr-sandbox.sh",
+    "test:sandbox:bare": "bash scripts/labcommitr-sandbox.sh --no-config",
+    "test:sandbox:reset": "bash scripts/labcommitr-sandbox.sh --reset",
+    "test:sandbox:clean": "bash scripts/labcommitr-sandbox.sh --clean"
   },
   "type": "module",
   "bin": {
