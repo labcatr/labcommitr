@@ -36,7 +36,7 @@ coverage/
 *.lcov
 
 # Testing
-# Sandbox directory for testing Labcommitr commands (scripts in scripts/ are tracked)
+# Sandbox directory for testing Labcommitr commands
 .sandbox/
 test-results/
 
@@ -75,10 +75,12 @@ Thumbs.db
 rust-src/
 
 ### Documentation
-# Ignore all .md files except README.md, CHANGELOG.md, and .changeset/*.md (local reference only)
+# Ignore all .md files except README.md, CHANGELOG.md, TESTING.md, docs/*.md, and .changeset/*.md
 *.md
 !README.md
 !CHANGELOG.md
+!TESTING.md
+!docs/*.md
 !.changeset/*.md
 
 ### Labcommitr Configuration

@@ -174,7 +174,7 @@ Labcommitr uses a `.labcommitr.config.yaml` file in your project root. The confi
 - **Keyboard shortcuts** - Enable and customize shortcuts for faster navigation
 - **Git integration** - Auto-staging and commit signing preferences
 
-See [`CONFIG_SCHEMA.md`](CONFIG_SCHEMA.md) for complete configuration documentation.
+See [`docs/CONFIG_SCHEMA.md`](docs/CONFIG_SCHEMA.md) for complete configuration documentation.
 
 **Configuration discovery:**
 - Searches from current directory up to project root
@@ -185,25 +185,49 @@ See [`CONFIG_SCHEMA.md`](CONFIG_SCHEMA.md) for complete configuration documentat
 
 ## Development & Testing
 
-### Testing Sandbox
+### Testing Environment
 
-For safe testing of Labcommitr commands without affecting your real repository, use the testing sandbox:
+For safe testing of Labcommitr commands without affecting your real repository, use the built-in testing environment:
 
 ```bash
-# Create sandbox with config (if available)
-pnpm run test:sandbox
+# Set up test environment (default scenario)
+lab test setup
 
-# Create sandbox without config (start from scratch)
-pnpm run test:sandbox:bare
+# Open shell in test environment
+lab test shell
 
-# Quick reset for iterative testing
-pnpm run test:sandbox:reset
+# Run commands normally
+lab commit
+lab preview
+lab revert
+
+# Reset environment for another test
+lab test reset
 
 # Clean up
-pnpm run test:sandbox:clean
+lab test clean
 ```
 
-See [`scripts/README.md`](scripts/README.md) for complete testing documentation.
+**Available Scenarios:**
+- `existing-project` - Test adding Labcommitr to existing project
+- `with-changes` - Test commit command with various file states (default)
+- `with-history` - Test preview and revert with rich history
+- `with-merge` - Test revert with merge commits
+- `with-conflicts` - Test conflict resolution workflows
+
+**Examples:**
+```bash
+# Set up specific scenario
+lab test setup --scenario with-history
+
+# List all scenarios
+lab test list-scenarios
+
+# Check current status
+lab test status
+```
+
+See [`TESTING.md`](TESTING.md) for complete testing documentation.
 
 ---
 
@@ -211,7 +235,7 @@ See [`scripts/README.md`](scripts/README.md) for complete testing documentation.
 
 Contributions are welcome! Please ensure your commits follow the project's commit message format (which you can set up using `lab init`).
 
-For development guidelines, see [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md).
+For development guidelines, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
 
 ---
 
