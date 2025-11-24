@@ -40,6 +40,10 @@ coverage/
 .sandbox/
 test-results/
 
+# Documentation
+# Architecture and development documentation (not tracked)
+docs/
+
 # npm/yarn/pnpm
 npm-debug.log*
 yarn-debug.log*
@@ -75,12 +79,11 @@ Thumbs.db
 rust-src/
 
 ### Documentation
-# Ignore all .md files except README.md, CHANGELOG.md, TESTING.md, docs/*.md, and .changeset/*.md
+# Ignore all .md files except README.md, CHANGELOG.md, TESTING.md, and .changeset/*.md
 *.md
 !README.md
 !CHANGELOG.md
 !TESTING.md
-!docs/*.md
 !.changeset/*.md
 
 ### Labcommitr Configuration
