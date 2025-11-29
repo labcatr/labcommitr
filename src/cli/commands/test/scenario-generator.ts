@@ -5,8 +5,8 @@
  */
 
 import { spawnSync } from "child_process";
-import { mkdirSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { mkdirSync, writeFileSync, existsSync, rmSync } from "fs";
+import { join, relative } from "path";
 import type { ScenarioName } from "./types.js";
 import { loadConfig } from "../../../lib/config/index.js";
 
@@ -20,9 +20,19 @@ function execGit(sandboxPath: string, args: string[]): void {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
-  if (result.status !== 0) {
+  if (result.error) {
     throw new Error(
-      `Git command failed: git ${args.join(" ")}\n${result.stderr}`,
+      `Failed to execute git command: git ${args.join(" ")}\n${result.error.message}`,
+    );
+  }
+
+  if (result.status !== 0) {
+    // With encoding: "utf-8", stderr/stdout are strings or null
+    const stderr = result.stderr || "";
+    const stdout = result.stdout || "";
+    const errorMessage = stderr || stdout || `Command exited with status ${result.status}`;
+    throw new Error(
+      `Git command failed: git ${args.join(" ")}\n${errorMessage}`,
     );
   }
 }
@@ -31,6 +41,11 @@ function execGit(sandboxPath: string, args: string[]): void {
  * Initialize git repository
  */
 function initGit(sandboxPath: string): void {
+  // Ensure directory exists and is accessible
+  if (!existsSync(sandboxPath)) {
+    throw new Error(`Sandbox directory does not exist: ${sandboxPath}`);
+  }
+
   execGit(sandboxPath, ["init", "--initial-branch=main"]);
   execGit(sandboxPath, ["config", "user.name", "Test User"]);
   execGit(sandboxPath, ["config", "user.email", "test@example.com"]);
@@ -164,7 +179,7 @@ function generateCommitHistory(
 /**
  * Create uncommitted changes
  */
-function createUncommittedChanges(sandboxPath: string): void {
+async function createUncommittedChanges(sandboxPath: string): Promise<void> {
   // Modified files
   for (let i = 1; i <= 4; i++) {
     const filePath = join(sandboxPath, "src", `component-${String.fromCharCode(96 + i)}.ts`);
@@ -183,42 +198,113 @@ function createUncommittedChanges(sandboxPath: string): void {
     );
   }
 
+  // Ensure lib directory exists
+  mkdirSync(join(sandboxPath, "lib"), { recursive: true });
+
   // Deleted files (mark for deletion)
+  // Create both files first, then commit them together, then remove them
+  const filesToDelete = [];
   for (let i = 1; i <= 2; i++) {
-    const filePath = join(sandboxPath, "lib", `old-util-${i}.js`);
+    const fileName = `old-util-${i}.js`;
+    const filePath = join(sandboxPath, "lib", fileName);
+    const relativePath = `lib/${fileName}`;
+    
+    // Create file if it doesn't exist
     if (!existsSync(filePath)) {
       writeFileSync(filePath, `// Old utility ${i}\n`);
-      execGit(sandboxPath, ["add", filePath]);
-      execGit(sandboxPath, [
-        "commit",
-        "-m",
-        `chore: add old util ${i}`,
-        "--no-verify",
-      ]);
+      filesToDelete.push({ filePath, relativePath });
     }
-    execGit(sandboxPath, ["rm", filePath]);
+  }
+  
+  // Add and commit all files together
+  if (filesToDelete.length > 0) {
+    const relativePaths = filesToDelete.map(f => f.relativePath);
+    execGit(sandboxPath, ["add", ...relativePaths]);
+    execGit(sandboxPath, [
+      "commit",
+      "-m",
+      "chore: add old util files for deletion test",
+      "--no-verify",
+    ]);
+  }
+  
+  // Now remove each file (they should all exist at this point)
+  // Use git rm to stage the deletion, then unstage it to create unstaged deletion
+  for (const { filePath, relativePath } of filesToDelete) {
+    // Verify file still exists before git rm
+    if (existsSync(filePath)) {
+      // Stage the deletion
+      execGit(sandboxPath, ["rm", relativePath]);
+      // Unstage it so it becomes an unstaged change (natural git state)
+      execGit(sandboxPath, ["reset", "HEAD", "--", relativePath]);
+    }
   }
 
   // Renamed files
-  mkdirSync(join(sandboxPath, "lib"), { recursive: true });
   const renames = [
     ["helpers.ts", "helper-functions.ts"],
     ["constants.ts", "app-constants.ts"],
   ];
 
+  // Ensure lib directory exists (in case it was removed)
+  const libDir = join(sandboxPath, "lib");
+  if (!existsSync(libDir)) {
+    mkdirSync(libDir, { recursive: true });
+  }
+
+  // Create all files first, then commit them together
+  const filesToRename = [];
   for (const [oldName, newName] of renames) {
     const oldPath = join(sandboxPath, "lib", oldName);
+    const oldRelativePath = `lib/${oldName}`;
+    const newRelativePath = `lib/${newName}`;
+    
     if (!existsSync(oldPath)) {
       writeFileSync(oldPath, `// ${oldName}\n`);
-      execGit(sandboxPath, ["add", oldPath]);
-      execGit(sandboxPath, [
-        "commit",
-        "-m",
-        `chore: add ${oldName}`,
-        "--no-verify",
-      ]);
+      filesToRename.push({ oldPath, oldRelativePath, newRelativePath });
     }
-    execGit(sandboxPath, ["mv", oldPath, join(sandboxPath, "lib", newName)]);
+  }
+  
+  // Add and commit all files together
+  if (filesToRename.length > 0) {
+    const relativePaths = filesToRename.map(f => f.oldRelativePath);
+    execGit(sandboxPath, ["add", ...relativePaths]);
+    execGit(sandboxPath, [
+      "commit",
+      "-m",
+      "chore: add files for rename test",
+      "--no-verify",
+    ]);
+  }
+  
+  // Now rename each file (they should all exist at this point)
+  // For unstaged renames, we manually move the file (not git mv) so git sees it as
+  // an unstaged deletion of old file and unstaged addition of new file
+  const { readFileSync, unlinkSync, statSync } = await import("fs");
+  for (const { oldPath, oldRelativePath, newRelativePath } of filesToRename) {
+    const newPath = join(sandboxPath, newRelativePath);
+    // Verify file exists and is a file (not a directory) before renaming
+    if (existsSync(oldPath)) {
+      try {
+        const stats = statSync(oldPath);
+        if (!stats.isFile()) {
+          continue; // Skip if it's not a file
+        }
+        // Manually move the file (not git mv) to create unstaged rename
+        const content = readFileSync(oldPath, "utf-8");
+        // Ensure new file's directory exists
+        const newDir = join(sandboxPath, "lib");
+        if (!existsSync(newDir)) {
+          mkdirSync(newDir, { recursive: true });
+        }
+        writeFileSync(newPath, content);
+        // Delete the old file (this creates an unstaged deletion)
+        unlinkSync(oldPath);
+      } catch (error) {
+        // Skip this file if there's an error reading/writing
+        continue;
+      }
+    }
   }
 }
 
@@ -296,9 +382,13 @@ export async function generateScenario(
   sandboxPath: string,
   scenario: ScenarioName,
 ): Promise<void> {
+  // Ensure sandbox directory exists
+  mkdirSync(sandboxPath, { recursive: true });
+
   // Clean and initialize
-  if (existsSync(join(sandboxPath, ".git"))) {
-    execGit(sandboxPath, ["rm", "-rf", ".git"]);
+  const gitDir = join(sandboxPath, ".git");
+  if (existsSync(gitDir)) {
+    rmSync(gitDir, { recursive: true, force: true });
   }
 
   initGit(sandboxPath);
@@ -309,14 +399,14 @@ export async function generateScenario(
     case "existing-project":
       // History + changes, no config
       generateCommitHistory(sandboxPath, 25);
-      createUncommittedChanges(sandboxPath);
+      await createUncommittedChanges(sandboxPath);
       // No config file
       break;
 
     case "with-changes":
       // History + changes + config
       generateCommitHistory(sandboxPath, 25);
-      createUncommittedChanges(sandboxPath);
+      await createUncommittedChanges(sandboxPath);
       await copyConfig(sandboxPath);
       break;
 
