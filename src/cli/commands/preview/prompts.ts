@@ -44,6 +44,8 @@ export function displayCommitList(
   startIndex: number,
   totalFetched: number,
   hasMore: boolean,
+  hasPreviousPage: boolean = false,
+  hasMorePages: boolean = false,
 ): void {
   console.log();
   console.log(
@@ -78,18 +80,42 @@ export function displayCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
+  const paginationHints: string[] = [];
+  if (hasPreviousPage) {
+    paginationHints.push(`${textColors.brightYellow("p")} for previous batch`);
+  }
+  if (hasMorePages) {
+    paginationHints.push(`${textColors.brightYellow("n")} for next batch`);
+  }
+  const paginationText = paginationHints.length > 0 
+    ? ` (press ${paginationHints.join(", ")})`
+    : "";
+  
   if (hasMore) {
     console.log(
-      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+ (press ${textColors.brightYellow("n")} for next batch)`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+${paginationText}`,
     );
   } else {
     console.log(
-      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}${paginationText}`,
     );
   }
   console.log();
+  
+  // Build navigation hints
+  const navHints: string[] = [];
+  navHints.push(`${textColors.brightCyan("0-9")} ${textColors.white("to view details")}`);
+  if (hasPreviousPage) {
+    navHints.push(`${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`);
+  }
+  if (hasMorePages) {
+    navHints.push(`${textColors.brightYellow("n")} ${textColors.white("for next batch")}`);
+  }
+  navHints.push(`${textColors.brightYellow("?")} ${textColors.white("for help")}`);
+  navHints.push(`${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`);
+  
   console.log(
-    `  ${textColors.white("Press")} ${textColors.brightCyan("0-9")} ${textColors.white("to view details,")} ${textColors.brightYellow("n")} ${textColors.white("for next batch,")} ${textColors.brightYellow("?")} ${textColors.white("for help, or")} ${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`,
+    `  ${textColors.white("Press")} ${navHints.join(`, `)}`,
   );
 }
 
@@ -169,7 +195,7 @@ export function displayHelp(): void {
   );
   console.log();
   console.log(`  ${textColors.brightCyan("0-9")}     View commit details`);
-  console.log(`  ${textColors.brightYellow("↑/↓")}     Navigate list`);
+  console.log(`  ${textColors.brightYellow("p")}      Jump to previous batch`);
   console.log(`  ${textColors.brightYellow("n")}      Jump to next batch`);
   console.log(`  ${textColors.brightYellow("b")}      View/toggle body`);
   console.log(`  ${textColors.brightYellow("f")}      View/toggle files`);
@@ -266,8 +292,9 @@ export async function waitForDetailAction(): Promise<
  */
 export async function waitForListAction(
   maxIndex: number,
-  hasMore: boolean,
-): Promise<number | "next" | "help" | "exit"> {
+  hasMorePages: boolean,
+  hasPreviousPage: boolean = false,
+): Promise<number | "next" | "previous" | "help" | "exit"> {
   return new Promise((resolve) => {
     const stdin = process.stdin;
     const wasRaw = stdin.isRaw;
@@ -287,11 +314,6 @@ export async function waitForListAction(
         return;
       }
 
-      if (key.name === "up" || key.name === "down") {
-        // Let user navigate with arrows (we'll handle this in the main loop)
-        return;
-      }
-
       // Number keys 0-9
       if (/^[0-9]$/.test(char)) {
         const num = parseInt(char, 10);
@@ -302,8 +324,15 @@ export async function waitForListAction(
         }
       }
 
-      // Next batch
-      if ((char === "n" || char === "N") && hasMore) {
+      // Previous batch - allow if there's a previous page
+      if ((char === "p" || char === "P") && hasPreviousPage) {
+        cleanup();
+        resolve("previous");
+        return;
+      }
+
+      // Next batch - allow if there are more pages to show
+      if ((char === "n" || char === "N") && hasMorePages) {
         cleanup();
         resolve("next");
         return;
