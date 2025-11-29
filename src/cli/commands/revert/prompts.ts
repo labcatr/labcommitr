@@ -52,6 +52,8 @@ export function displayRevertCommitList(
   startIndex: number,
   totalFetched: number,
   hasMore: boolean,
+  hasPreviousPage: boolean = false,
+  hasMorePages: boolean = false,
 ): void {
   console.log();
   console.log(
@@ -82,14 +84,27 @@ export function displayRevertCommitList(
     );
   }
 
+  // Pagination info
+  const endIndex = startIndex + displayCount;
   console.log();
+  const paginationHints: string[] = [];
+  if (hasPreviousPage) {
+    paginationHints.push(`${textColors.brightYellow("p")} for previous batch`);
+  }
+  if (hasMorePages) {
+    paginationHints.push(`${textColors.brightYellow("n")} for next batch`);
+  }
+  const paginationText = paginationHints.length > 0 
+    ? ` (press ${paginationHints.join(", ")})`
+    : "";
+  
   if (hasMore) {
     console.log(
-      `  Showing commits ${startIndex + 1}-${startIndex + displayCount} of ${totalFetched}+ (press ${textColors.brightYellow("n")} for next batch)`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+${paginationText}`,
     );
   } else {
     console.log(
-      `  Showing commits ${startIndex + 1}-${startIndex + displayCount} of ${totalFetched}`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}${paginationText}`,
     );
   }
   console.log();

@@ -376,6 +376,17 @@ async function revertAction(options: {
       process.exit(1);
     }
 
+    // Check for config if --no-edit is not used (config needed for commit workflow)
+    if (!options.noEdit) {
+      const configResult = await loadConfig();
+      if (configResult.source === "defaults") {
+        Logger.error("Configuration not found");
+        console.error("\n  Run 'lab init' to create configuration file.");
+        console.error("  Or use --no-edit to use Git's default revert message.\n");
+        process.exit(1);
+      }
+    }
+
     // Check for uncommitted changes
     if (hasUncommittedChanges()) {
       console.log();
@@ -409,7 +420,11 @@ async function revertAction(options: {
 
       const remaining = maxCommits - totalFetched;
       const toFetch = Math.min(remaining, 50);
-      const newCommits = fetchCommits(toFetch, branch);
+      
+      // Get the last commit hash we've already fetched to exclude it from next fetch
+      const lastHash = allCommits.length > 0 ? allCommits[allCommits.length - 1].hash : undefined;
+      
+      const newCommits = fetchCommits(toFetch, branch, lastHash);
       allCommits = [...allCommits, ...newCommits];
       totalFetched = allCommits.length;
       hasMore = newCommits.length === 50 && totalFetched < maxCommits;
@@ -432,10 +447,25 @@ async function revertAction(options: {
       const endIndex = Math.min(startIndex + pageSize, allCommits.length);
       const pageCommits = allCommits.slice(startIndex, endIndex);
 
-      displayRevertCommitList(pageCommits, startIndex, totalFetched, hasMore);
+      // Check if there are more pages to show (either already loaded or can be fetched)
+      const hasMorePages = (currentPage + 1) * pageSize < allCommits.length || hasMore;
+      const hasPreviousPage = currentPage > 0;
 
+      displayRevertCommitList(pageCommits, startIndex, totalFetched, hasMore, hasPreviousPage, hasMorePages);
+
+      // Build navigation hints
+      const navHints: string[] = [];
+      navHints.push(`${textColors.brightCyan("0-9")} ${textColors.white("to select commit")}`);
+      if (hasPreviousPage) {
+        navHints.push(`${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`);
+      }
+      if (hasMorePages) {
+        navHints.push(`${textColors.brightYellow("n")} ${textColors.white("for next batch")}`);
+      }
+      navHints.push(`${textColors.brightYellow("Esc")} ${textColors.white("to cancel")}`);
+      
       console.log(
-        `  ${textColors.white("Press")} ${textColors.brightCyan("0-9")} ${textColors.white("to select commit,")} ${textColors.brightYellow("n")} ${textColors.white("for next batch,")} ${textColors.brightYellow("Esc")} ${textColors.white("to cancel")}`,
+        `  ${textColors.white("Press")} ${navHints.join(`, `)}`,
       );
 
       // Wait for input
@@ -450,7 +480,7 @@ async function revertAction(options: {
 
       readline.emitKeypressEvents(stdin);
 
-      const selection = await new Promise<number | "next" | "cancel">((resolve) => {
+      const selection = await new Promise<number | "next" | "previous" | "cancel">((resolve) => {
         const onKeypress = (char: string, key: readline.Key) => {
           if (key.name === "escape" || (key.ctrl && key.name === "c")) {
             cleanup();
@@ -467,7 +497,15 @@ async function revertAction(options: {
             }
           }
 
-          if ((char === "n" || char === "N") && hasMore) {
+          // Previous batch - allow if there's a previous page
+          if ((char === "p" || char === "P") && hasPreviousPage) {
+            cleanup();
+            resolve("previous");
+            return;
+          }
+
+          // Next batch - allow if there are more pages to show
+          if ((char === "n" || char === "N") && hasMorePages) {
             cleanup();
             resolve("next");
             return;
@@ -488,14 +526,30 @@ async function revertAction(options: {
       if (selection === "cancel") {
         console.log("\n  Revert cancelled.\n");
         process.exit(0);
+      } else if (selection === "previous") {
+        // Move to previous page
+        if (currentPage > 0) {
+          currentPage--;
+        }
       } else if (selection === "next") {
-        if (hasMore) {
+        // Move to next page
+        const nextPageStart = (currentPage + 1) * pageSize;
+        
+        // If we need more commits and they're available, load them
+        if (nextPageStart >= allCommits.length && hasMore) {
           console.log("\n  Loading next batch...");
           await loadMoreCommits();
-          if (!hasMore) {
+          if (!hasMore && nextPageStart >= allCommits.length) {
             console.log("  Maximum commits loaded (100).");
             await new Promise((resolve) => setTimeout(resolve, 1000));
+            // Don't increment page if we can't show it
+            continue;
           }
+        }
+        
+        // Increment page if we have commits to show
+        if (nextPageStart < allCommits.length) {
+          currentPage++;
         }
       } else if (typeof selection === "number") {
         selectedCommit = pageCommits[selection];
