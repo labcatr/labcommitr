@@ -90,6 +90,7 @@ function formatRelativeTime(date: Date): string {
 export function fetchCommits(
   limit: number,
   branch?: string,
+  excludeHash?: string,
 ): CommitInfo[] {
   const args = [
     "log",
@@ -99,7 +100,18 @@ export function fetchCommits(
     "--date=iso",
   ];
 
-  if (branch) {
+  // To get commits older than excludeHash, we fetch starting from excludeHash's parent
+  // excludeHash^ means "the parent of excludeHash" (which is older in the history)
+  // This gives us commits that are older than the last one we've seen
+  if (excludeHash) {
+    // Fetch from the parent of the last commit we've seen
+    // This will get commits older than excludeHash
+    const startPoint = `${excludeHash}^`;
+    args.push(startPoint);
+    // If branch is specified, we still want to limit to that branch
+    // But since we're starting from an older commit, we'll naturally get commits on the same branch
+    // (unless there are merges, but that's fine - we want all commits)
+  } else if (branch) {
     args.push(branch);
   }
 

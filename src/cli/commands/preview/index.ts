@@ -72,7 +72,11 @@ async function previewAction(options: {
 
       const remaining = maxCommits - totalFetched;
       const toFetch = Math.min(remaining, 50);
-      const newCommits = fetchCommits(toFetch, branch);
+      
+      // Get the last commit hash we've already fetched to exclude it from next fetch
+      const lastHash = allCommits.length > 0 ? allCommits[allCommits.length - 1].hash : undefined;
+      
+      const newCommits = fetchCommits(toFetch, branch, lastHash);
       allCommits = [...allCommits, ...newCommits];
       totalFetched = allCommits.length;
       hasMore = newCommits.length === 50 && totalFetched < maxCommits;
@@ -165,9 +169,13 @@ async function previewAction(options: {
         const pageCommits = allCommits.slice(startIndex, endIndex);
         const maxIndex = pageCommits.length - 1;
 
-        displayCommitList(pageCommits, startIndex, totalFetched, hasMore);
+        // Check if there are more pages to show (either already loaded or can be fetched)
+        const hasMorePages = (currentPage + 1) * pageSize < allCommits.length || hasMore;
+        const hasPreviousPage = currentPage > 0;
 
-        const action = await waitForListAction(maxIndex, hasMore);
+        displayCommitList(pageCommits, startIndex, totalFetched, hasMore, hasPreviousPage, hasMorePages);
+
+        const action = await waitForListAction(maxIndex, hasMorePages, hasPreviousPage);
 
         if (typeof action === "number") {
           // View commit details
@@ -190,15 +198,30 @@ async function previewAction(options: {
             currentDetailCommit = commit;
           }
           viewingDetails = true;
+        } else if (action === "previous") {
+          // Move to previous page
+          if (currentPage > 0) {
+            currentPage--;
+          }
         } else if (action === "next") {
-          // Load next batch
-          if (hasMore) {
+          // Move to next page
+          const nextPageStart = (currentPage + 1) * pageSize;
+          
+          // If we need more commits and they're available, load them
+          if (nextPageStart >= allCommits.length && hasMore) {
             console.log("\n  Loading next batch...");
             await loadMoreCommits();
-            if (!hasMore) {
+            if (!hasMore && nextPageStart >= allCommits.length) {
               console.log("  Maximum commits loaded (100).");
               await new Promise((resolve) => setTimeout(resolve, 1000));
+              // Don't increment page if we can't show it
+              continue;
             }
+          }
+          
+          // Increment page if we have commits to show
+          if (nextPageStart < allCommits.length) {
+            currentPage++;
           }
         } else if (action === "help") {
           displayHelp();
