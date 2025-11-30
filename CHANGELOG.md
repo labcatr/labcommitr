@@ -1,33 +1,5 @@
 # @labcatr/labcommitr
 
-## 0.4.0
-
-### Minor Changes
-
-- 18d5a56: feat: implement terminal emoji detection and display adaptation
-  - Add emoji detection utility with industry-standard heuristics (CI, TERM, NO_COLOR, Windows Terminal)
-  - Implement automatic emoji stripping for non-emoji terminals in Labcommitr UI
-  - Always store Unicode emojis in Git commits regardless of terminal support
-  - Update commit, preview, and revert commands to adapt display based on terminal capabilities
-  - Ensure GitHub and emoji-capable terminals always show emojis correctly
-  - Improve user experience by cleaning up broken emoji symbols on non-emoji terminals
-
-### Patch Changes
-
-- 48bd866: fix: include emoji placeholder in generated config template
-  - Add {emoji} placeholder to template in buildConfig function
-  - Generated configs now include {emoji} in format.template field
-  - Fixes issue where emojis didn't appear in commits even when enabled
-  - Template now matches default config structure with emoji support
-  - Ensures formatCommitMessage can properly replace emoji placeholder
-
-- 250dcc5: fix: show actual commit message with emojis in preview
-  - Preview now displays the exact commit message as it will be stored in Git
-  - Removed emoji stripping from preview display logic
-  - Users can see emojis even if terminal doesn't support emoji display
-  - Ensures preview accurately reflects what will be committed to Git/GitHub
-  - Fixes issue where emojis were hidden in preview on non-emoji terminals
-
 ## 0.3.0
 
 ### Minor Changes
