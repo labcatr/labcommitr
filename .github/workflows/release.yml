@@ -51,6 +51,6 @@ jobs:
           title: "[ci] release"
         env:
           # Uses built-in GITHUB_TOKEN (automatically available, no secret needed)
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.LAB_ACTIONS_TOKEN }}
           # Needs access to publish to npm
           NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
