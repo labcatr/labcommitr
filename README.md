@@ -374,10 +374,6 @@ Before implementing any changes, please follow this process:
    - Follow the project's development guidelines
    - Ensure your commits follow the project's commit message format (you can set up using `lab init`)
 
-### Development Guidelines
-
-For detailed development guidelines, coding standards, and architecture information, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
-
 ### Questions?
 
 If you have questions or need clarification, feel free to open a discussion or issue.
