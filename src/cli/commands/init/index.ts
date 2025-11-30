@@ -62,6 +62,7 @@ function configExists(projectRoot: string): boolean {
  */
 export const initCommand = new Command("init")
   .description("Initialize labcommitr configuration in your project")
+  .alias("i")
   .option("-f, --force", "Overwrite existing configuration")
   .option(
     "--preset <type>",

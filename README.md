@@ -92,6 +92,7 @@ Initialize Labcommitr configuration in your project. This creates a `.labcommitr
 **Usage:**
 ```bash
 lab init [options]
+lab i [options]  # Short alias
 ```
 
 **Options:**
