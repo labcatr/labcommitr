@@ -94,15 +94,17 @@ async function previewAction(options: {
     let exit = false;
     let viewingDetails = false;
     let currentDetailCommit: CommitInfo | null = null;
+    let showBody = true; // Toggle state for body visibility
+    let showFiles = true; // Toggle state for files visibility
 
     while (!exit) {
       clearTerminal();
 
       if (viewingDetails && currentDetailCommit) {
         // Detail view
-        displayCommitDetails(currentDetailCommit);
+        displayCommitDetails(currentDetailCommit, showBody, showFiles);
         console.log(
-          `  ${textColors.white("Press")} ${textColors.brightYellow("b")} ${textColors.white("for body,")} ${textColors.brightYellow("f")} ${textColors.white("for files,")} ${textColors.brightYellow("d")} ${textColors.white("for diff,")} ${textColors.brightYellow("r")} ${textColors.white("to revert,")} ${textColors.brightYellow("←")} ${textColors.white("to go back")}`,
+          `  ${textColors.white("Press")} ${textColors.brightYellow("b")} ${textColors.white("to toggle body,")} ${textColors.brightYellow("f")} ${textColors.white("to toggle files,")} ${textColors.brightYellow("d")} ${textColors.white("for diff,")} ${textColors.brightYellow("r")} ${textColors.white("to revert,")} ${textColors.brightYellow("←")} ${textColors.white("to go back")}`,
         );
 
         const action = await waitForDetailAction();
@@ -111,12 +113,16 @@ async function previewAction(options: {
           case "back":
             viewingDetails = false;
             currentDetailCommit = null;
+            showBody = true; // Reset toggles when going back
+            showFiles = true;
             break;
           case "body":
-            // Body is already shown in details
+            // Toggle body visibility
+            showBody = !showBody;
             break;
           case "files":
-            // Files are already shown in details
+            // Toggle files visibility
+            showFiles = !showFiles;
             break;
           case "diff":
             clearTerminal();
@@ -198,6 +204,8 @@ async function previewAction(options: {
             currentDetailCommit = commit;
           }
           viewingDetails = true;
+          showBody = true; // Reset toggles when viewing new commit
+          showFiles = true;
         } else if (action === "previous") {
           // Move to previous page
           if (currentPage > 0) {

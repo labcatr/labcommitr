@@ -122,7 +122,11 @@ export function displayCommitList(
 /**
  * Display commit details
  */
-export function displayCommitDetails(commit: CommitInfo): void {
+export function displayCommitDetails(
+  commit: CommitInfo,
+  showBody: boolean = true,
+  showFiles: boolean = true,
+): void {
   console.log();
   console.log(
     `${label("detail", "green")}  ${textColors.pureWhite("Commit Details")}`,
@@ -161,27 +165,31 @@ export function displayCommitDetails(commit: CommitInfo): void {
     console.log();
   }
 
-  if (commit.body) {
-    console.log(`  ${textColors.brightWhite("Body:")}`);
-    const bodyLines = commit.body.split("\n");
-    bodyLines.forEach((line) => {
-      console.log(`    ${line}`);
-    });
-    console.log();
-  } else {
-    console.log(`  ${textColors.white("Body:")} No body`);
-    console.log();
+  if (showBody) {
+    if (commit.body) {
+      console.log(`  ${textColors.brightWhite("Body:")}`);
+      const bodyLines = commit.body.split("\n");
+      bodyLines.forEach((line) => {
+        console.log(`    ${line}`);
+      });
+      console.log();
+    } else {
+      console.log(`  ${textColors.white("Body:")} No body`);
+      console.log();
+    }
   }
 
-  if (commit.files && commit.files.length > 0) {
-    console.log(`  ${textColors.brightWhite("Changed Files:")}`);
-    commit.files.slice(0, 20).forEach((file) => {
-      console.log(`    ${file}`);
-    });
-    if (commit.files.length > 20) {
-      console.log(`    ... and ${commit.files.length - 20} more`);
+  if (showFiles) {
+    if (commit.files && commit.files.length > 0) {
+      console.log(`  ${textColors.brightWhite("Changed Files:")}`);
+      commit.files.slice(0, 20).forEach((file) => {
+        console.log(`    ${file}`);
+      });
+      if (commit.files.length > 20) {
+        console.log(`    ... and ${commit.files.length - 20} more`);
+      }
+      console.log();
     }
-    console.log();
   }
 }
 
