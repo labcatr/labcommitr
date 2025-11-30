@@ -355,7 +355,10 @@ export class ConfigLoader {
    */
   private detectEmojiSupport(config?: LabcommitrConfig): boolean {
     // User override takes highest priority
-    if (config?.config.force_emoji_detection !== null && config?.config.force_emoji_detection !== undefined) {
+    if (
+      config?.config.force_emoji_detection !== null &&
+      config?.config.force_emoji_detection !== undefined
+    ) {
       return config.config.force_emoji_detection;
     }
 
