@@ -56,6 +56,8 @@
     "dist/cli/program.js",
     "dist/cli/program.d.ts",
     "dist/cli/commands/commit",
+    "dist/cli/commands/commit.js",
+    "dist/cli/commands/commit.d.ts",
     "dist/cli/commands/config.js",
     "dist/cli/commands/config.d.ts",
     "dist/cli/commands/init",
