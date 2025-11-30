@@ -124,7 +124,10 @@ export async function promptType(
     {
       message: `${label("type", "magenta")}  ${textColors.pureWhite("Select commit type:")}`,
       options,
-      initialValue: initialIndex !== undefined && initialIndex >= 0 ? config.types[initialIndex].id : undefined,
+      initialValue:
+        initialIndex !== undefined && initialIndex >= 0
+          ? config.types[initialIndex].id
+          : undefined,
     },
     shortcutMapping,
   );
@@ -157,8 +160,12 @@ export async function promptScope(
       console.error(
         `\n✗ Error: Scope is required for commit type '${selectedType}'`,
       );
-      console.error("\n  Your configuration requires a scope for this commit type.");
-      console.error(`\n  Fix: Add scope with -s <scope> or run 'lab commit' interactively\n`);
+      console.error(
+        "\n  Your configuration requires a scope for this commit type.",
+      );
+      console.error(
+        `\n  Fix: Add scope with -s <scope> or run 'lab commit' interactively\n`,
+      );
       process.exit(1);
     }
     if (allowedScopes.length > 0 && !allowedScopes.includes(providedScope)) {
@@ -194,7 +201,10 @@ export async function promptScope(
         `Enter scope ${isRequired ? "(required for '" + selectedType + "')" : "(optional)"}:`,
       )}`,
       options,
-      initialValue: initialIndex !== undefined && initialIndex >= 0 ? allowedScopes[initialIndex] : initialScope || undefined,
+      initialValue:
+        initialIndex !== undefined && initialIndex >= 0
+          ? allowedScopes[initialIndex]
+          : initialScope || undefined,
     });
 
     handleCancel(selected);
@@ -300,7 +310,9 @@ export async function promptSubject(
           console.error(`    ${error.context}`);
         }
       }
-      console.error(`\n  Fix: Correct the subject and try again, or run 'lab commit' interactively\n`);
+      console.error(
+        `\n  Fix: Correct the subject and try again, or run 'lab commit' interactively\n`,
+      );
       process.exit(1);
     }
     return providedMessage;
@@ -483,7 +495,11 @@ export async function promptBody(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+        const label = formatLabelWithShortcut(
+          option.label,
+          shortcut,
+          displayHints,
+        );
 
         return {
           value: option.value,
@@ -562,7 +578,11 @@ export async function promptBody(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+        const label = formatLabelWithShortcut(
+          option.label,
+          shortcut,
+          displayHints,
+        );
 
         return {
           value: option.value,
@@ -583,7 +603,10 @@ export async function promptBody(
       handleCancel(inputMethod);
 
       if (inputMethod === "editor") {
-        const editorBody = await promptBodyWithEditor(config, typeof body === "string" ? body : initialBody || "");
+        const editorBody = await promptBodyWithEditor(
+          config,
+          typeof body === "string" ? body : initialBody || "",
+        );
         if (editorBody !== null && editorBody !== undefined) {
           body = editorBody;
         } else {
@@ -681,7 +704,11 @@ async function promptBodyRequiredWithEditor(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+        const label = formatLabelWithShortcut(
+          option.label,
+          shortcut,
+          displayHints,
+        );
 
         return {
           value: option.value,
@@ -789,7 +816,11 @@ async function promptBodyWithEditor(
       const shortcut = shortcutMapping
         ? getShortcutForValue(option.value, shortcutMapping)
         : undefined;
-      const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+      const label = formatLabelWithShortcut(
+        option.label,
+        shortcut,
+        displayHints,
+      );
 
       return {
         value: option.value,
@@ -1045,7 +1076,21 @@ export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
   config?: LabcommitrConfig,
-): Promise<"commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel"> {
+  emojiModeActive: boolean = true,
+): Promise<
+  | "commit"
+  | "edit-type"
+  | "edit-scope"
+  | "edit-subject"
+  | "edit-body"
+  | "cancel"
+> {
+  // Preview shows the actual commit message as it will be stored in Git
+  // We don't strip emojis here because the user needs to see what will be committed
+  // even if their terminal doesn't support emoji display
+  const displayMessage = formattedMessage;
+  const displayBody = body;
+
   // Start connector line using @clack/prompts
   log.info(
     `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
@@ -1054,11 +1099,11 @@ export async function displayPreview(
   // Render content with connector lines
   // Empty line after header
   console.log(renderWithConnector(""));
-  console.log(renderWithConnector(textColors.brightCyan(formattedMessage)));
+  console.log(renderWithConnector(textColors.brightCyan(displayMessage)));
 
-  if (body) {
+  if (displayBody) {
     console.log(renderWithConnector(""));
-    const bodyLines = body.split("\n");
+    const bodyLines = displayBody.split("\n");
     for (const line of bodyLines) {
       console.log(renderWithConnector(textColors.white(line)));
     }
@@ -1081,11 +1126,7 @@ export async function displayPreview(
   ];
 
   const shortcutMapping = config
-    ? processShortcuts(
-        config.advanced.shortcuts,
-        "preview",
-        previewOptions,
-      )
+    ? processShortcuts(config.advanced.shortcuts, "preview", previewOptions)
     : null;
 
   const displayHints = config?.advanced.shortcuts?.display_hints ?? true;
@@ -1112,5 +1153,11 @@ export async function displayPreview(
   );
 
   handleCancel(action);
-  return action as "commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel";
+  return action as
+    | "commit"
+    | "edit-type"
+    | "edit-scope"
+    | "edit-subject"
+    | "edit-body"
+    | "cancel";
 }

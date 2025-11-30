@@ -11,4 +11,3 @@ export interface PreviewState {
   hasMore: boolean;
   currentIndex: number;
 }
-

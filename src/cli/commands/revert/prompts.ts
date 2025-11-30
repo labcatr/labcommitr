@@ -6,6 +6,7 @@
 
 import { select, confirm, isCancel } from "@clack/prompts";
 import { labelColors, textColors, success, attention } from "../init/colors.js";
+import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo, MergeParent } from "../shared/types.js";
 
 /**
@@ -54,6 +55,7 @@ export function displayRevertCommitList(
   hasMore: boolean,
   hasPreviousPage: boolean = false,
   hasMorePages: boolean = false,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -71,10 +73,11 @@ export function displayRevertCommitList(
     const commit = commits[i];
     const number = i.toString();
     const mergeIndicator = commit.isMerge ? " [Merge]" : "";
+    const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
     const truncatedSubject =
-      commit.subject.length > 50
-        ? commit.subject.substring(0, 47) + "..."
-        : commit.subject;
+      displaySubject.length > 50
+        ? displaySubject.substring(0, 47) + "..."
+        : displaySubject;
 
     console.log(
       `  ${textColors.brightCyan(`[${number}]`)} ${textColors.brightWhite(commit.shortHash)} ${truncatedSubject}${mergeIndicator}`,
@@ -87,7 +90,7 @@ export function displayRevertCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
-  
+
   if (hasMore) {
     console.log(
       `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+`,
@@ -124,14 +127,20 @@ export async function promptMergeParent(
 /**
  * Display revert confirmation
  */
-export function displayRevertConfirmation(commit: CommitInfo): void {
+export function displayRevertConfirmation(
+  commit: CommitInfo,
+  emojiModeActive: boolean = true,
+): void {
   console.log();
   console.log(
     `${label("confirm", "green")}  ${textColors.pureWhite("Revert Confirmation")}`,
   );
   console.log();
-  console.log(`  ${textColors.brightWhite("Reverting commit:")} ${commit.shortHash}`);
-  console.log(`  ${textColors.brightWhite("Original:")} ${commit.subject}`);
+  console.log(
+    `  ${textColors.brightWhite("Reverting commit:")} ${commit.shortHash}`,
+  );
+  const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
+  console.log(`  ${textColors.brightWhite("Original:")} ${displaySubject}`);
   console.log();
   console.log(
     `  ${attention("This will create a new commit that undoes these changes.")}`,
@@ -142,7 +151,9 @@ export function displayRevertConfirmation(commit: CommitInfo): void {
 /**
  * Prompt for revert confirmation
  */
-export async function promptRevertConfirmation(): Promise<"confirm" | "edit" | "cancel"> {
+export async function promptRevertConfirmation(): Promise<
+  "confirm" | "edit" | "cancel"
+> {
   const confirmed = await confirm({
     message: `${label("confirm", "green")}  ${textColors.pureWhite("Proceed with revert?")}`,
     initialValue: true,
@@ -163,4 +174,3 @@ export async function promptRevertConfirmation(): Promise<"confirm" | "edit" | "
 
   return "cancel";
 }
-

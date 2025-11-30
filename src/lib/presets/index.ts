@@ -141,8 +141,8 @@ export function buildConfig(
       force_emoji_detection: null,
     },
     format: {
-      // Template is determined by style; emoji is handled at render time
-      template: "{type}({scope}): {subject}",
+      // Template includes {emoji} placeholder - will be replaced with emoji or empty string
+      template: "{emoji}{type}({scope}): {subject}",
       subject_max_length: 50,
       // Body configuration (respects user choice, defaults to optional)
       body: {

@@ -6,6 +6,7 @@
 
 import { select, isCancel } from "@clack/prompts";
 import { labelColors, textColors } from "../init/colors.js";
+import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo } from "../shared/types.js";
 import { getCommitDetails, getCommitDiff } from "../shared/git-operations.js";
 import readline from "readline";
@@ -46,6 +47,7 @@ export function displayCommitList(
   hasMore: boolean,
   hasPreviousPage: boolean = false,
   hasMorePages: boolean = false,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -64,10 +66,11 @@ export function displayCommitList(
     const commit = commits[i];
     const number = i.toString();
     const mergeIndicator = commit.isMerge ? " [Merge]" : "";
+    const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
     const truncatedSubject =
-      commit.subject.length > 50
-        ? commit.subject.substring(0, 47) + "..."
-        : commit.subject;
+      displaySubject.length > 50
+        ? displaySubject.substring(0, 47) + "..."
+        : displaySubject;
 
     console.log(
       `  ${textColors.brightCyan(`[${number}]`)} ${textColors.brightWhite(commit.shortHash)} ${truncatedSubject}${mergeIndicator}`,
@@ -80,7 +83,7 @@ export function displayCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
-  
+
   if (hasMore) {
     console.log(
       `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+`,
@@ -91,22 +94,30 @@ export function displayCommitList(
     );
   }
   console.log();
-  
+
   // Build navigation hints
   const navHints: string[] = [];
-  navHints.push(`${textColors.brightCyan("0-9")} ${textColors.white("to view details")}`);
+  navHints.push(
+    `${textColors.brightCyan("0-9")} ${textColors.white("to view details")}`,
+  );
   if (hasPreviousPage) {
-    navHints.push(`${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`);
+    navHints.push(
+      `${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`,
+    );
   }
   if (hasMorePages) {
-    navHints.push(`${textColors.brightYellow("n")} ${textColors.white("for next batch")}`);
+    navHints.push(
+      `${textColors.brightYellow("n")} ${textColors.white("for next batch")}`,
+    );
   }
-  navHints.push(`${textColors.brightYellow("?")} ${textColors.white("for help")}`);
-  navHints.push(`${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`);
-  
-  console.log(
-    `  ${textColors.white("Press")} ${navHints.join(`, `)}`,
+  navHints.push(
+    `${textColors.brightYellow("?")} ${textColors.white("for help")}`,
   );
+  navHints.push(
+    `${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`,
+  );
+
+  console.log(`  ${textColors.white("Press")} ${navHints.join(`, `)}`);
 }
 
 /**
@@ -116,6 +127,7 @@ export function displayCommitDetails(
   commit: CommitInfo,
   showBody: boolean = true,
   showFiles: boolean = true,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -123,11 +135,16 @@ export function displayCommitDetails(
   );
   console.log();
   console.log(`  ${textColors.brightWhite("Hash:")} ${commit.hash}`);
-  console.log(`  ${textColors.brightWhite("Subject:")} ${commit.subject}`);
+  const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
+  console.log(`  ${textColors.brightWhite("Subject:")} ${displaySubject}`);
   console.log();
-  console.log(`  ${textColors.brightWhite("Author:")} ${commit.author.name} <${commit.author.email}>`);
+  console.log(
+    `  ${textColors.brightWhite("Author:")} ${commit.author.name} <${commit.author.email}>`,
+  );
   console.log(`  ${textColors.brightWhite("Date:")} ${commit.date.absolute}`);
-  console.log(`  ${textColors.brightWhite("Relative:")} ${commit.date.relative}`);
+  console.log(
+    `  ${textColors.brightWhite("Relative:")} ${commit.date.relative}`,
+  );
   console.log();
 
   if (commit.parents.length > 0) {
@@ -147,10 +164,14 @@ export function displayCommitDetails(
     console.log(`  ${textColors.brightWhite("File Statistics:")}`);
     console.log(`    Files changed: ${commit.fileStats.filesChanged}`);
     if (commit.fileStats.additions !== undefined) {
-      console.log(`    Additions: ${textColors.gitAdded(`+${commit.fileStats.additions}`)}`);
+      console.log(
+        `    Additions: ${textColors.gitAdded(`+${commit.fileStats.additions}`)}`,
+      );
     }
     if (commit.fileStats.deletions !== undefined) {
-      console.log(`    Deletions: ${textColors.gitDeleted(`-${commit.fileStats.deletions}`)}`);
+      console.log(
+        `    Deletions: ${textColors.gitDeleted(`-${commit.fileStats.deletions}`)}`,
+      );
     }
     console.log();
   }
@@ -158,7 +179,8 @@ export function displayCommitDetails(
   if (showBody) {
     if (commit.body) {
       console.log(`  ${textColors.brightWhite("Body:")}`);
-      const bodyLines = commit.body.split("\n");
+      const displayBody = formatForDisplay(commit.body, emojiModeActive);
+      const bodyLines = displayBody.split("\n");
       bodyLines.forEach((line) => {
         console.log(`    ${line}`);
       });
@@ -362,4 +384,3 @@ export async function waitForListAction(
     stdin.on("keypress", onKeypress);
   });
 }
-

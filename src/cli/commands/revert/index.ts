@@ -8,6 +8,10 @@ import { Command } from "commander";
 import { Logger } from "../../../lib/logger.js";
 import { loadConfig } from "../../../lib/config/index.js";
 import {
+  detectEmojiSupport,
+  formatForDisplay,
+} from "../../../lib/util/emoji.js";
+import {
   isGitRepository,
   getCurrentBranch,
   fetchCommits,
@@ -16,7 +20,10 @@ import {
   getMergeParents,
   hasUncommittedChanges,
 } from "../shared/git-operations.js";
-import { parseCommitMessage, generateRevertSubject } from "../shared/commit-parser.js";
+import {
+  parseCommitMessage,
+  generateRevertSubject,
+} from "../shared/commit-parser.js";
 import type { CommitInfo } from "../shared/types.js";
 import {
   displayRevertCommitList,
@@ -130,6 +137,7 @@ export async function revertCommit(
     }
 
     const config = configResult.config;
+    const emojiModeActive = configResult.emojiModeActive;
 
     // Get commit details
     const commit = getCommitDetails(commitHash);
@@ -148,7 +156,7 @@ export async function revertCommit(
 
     // Show confirmation
     clearTerminal();
-    displayRevertConfirmation(commit);
+    displayRevertConfirmation(commit, emojiModeActive);
 
     let useWorkflow = !options?.noEdit;
     if (useWorkflow) {
@@ -220,7 +228,13 @@ export async function revertCommit(
         subject,
       );
 
-      let action: "commit" | "edit-type" | "edit-scope" | "edit-subject" | "edit-body" | "cancel";
+      let action:
+        | "commit"
+        | "edit-type"
+        | "edit-scope"
+        | "edit-subject"
+        | "edit-body"
+        | "cancel";
 
       do {
         // Regenerate formatted message with current values
@@ -232,13 +246,19 @@ export async function revertCommit(
           subject,
         );
 
-        action = await displayPreview(formattedMessage, body, config);
+        action = await displayPreview(
+          formattedMessage,
+          body,
+          config,
+          emojiModeActive,
+        );
 
         if (action === "edit-type") {
           const typeResult = await promptType(config, undefined, type);
           type = typeResult.type;
           emoji = typeResult.emoji;
-          const isScopeRequired = config.validation.require_scope_for.includes(type);
+          const isScopeRequired =
+            config.validation.require_scope_for.includes(type);
           if (isScopeRequired && !scope) {
             scope = await promptScope(config, type, undefined, scope);
           }
@@ -281,7 +301,9 @@ export async function revertCommit(
         });
 
         if (amendResult.status !== 0) {
-          throw new Error(`Failed to amend commit: ${amendResult.stderr?.toString() || "Unknown error"}`);
+          throw new Error(
+            `Failed to amend commit: ${amendResult.stderr?.toString() || "Unknown error"}`,
+          );
         }
 
         // Get commit hash
@@ -289,21 +311,28 @@ export async function revertCommit(
           encoding: "utf-8",
           stdio: ["ignore", "pipe", "pipe"],
         });
-        const revertHash = hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
+        const revertHash =
+          hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
 
         console.log(`${success("✓")} Revert commit created successfully!`);
-        console.log(`  ${revertHash} ${formattedMessage}`);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
+        console.log(`  ${revertHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Check if it's a conflict
         if (error instanceof Error && error.message.includes("conflict")) {
           console.log();
-          console.log(
-            `${attention("⚠ Conflicts detected during revert.")}`,
-          );
+          console.log(`${attention("⚠ Conflicts detected during revert.")}`);
           console.log();
           console.log("  Resolve conflicts manually, then:");
-          console.log(`    ${textColors.brightCyan("lab revert --continue")} - Continue after resolution`);
-          console.log(`    ${textColors.brightCyan("lab revert --abort")} - Abort revert`);
+          console.log(
+            `    ${textColors.brightCyan("lab revert --continue")} - Continue after resolution`,
+          );
+          console.log(
+            `    ${textColors.brightCyan("lab revert --abort")} - Abort revert`,
+          );
           process.exit(1);
         }
         throw error;
@@ -319,20 +348,23 @@ export async function revertCommit(
           encoding: "utf-8",
           stdio: ["ignore", "pipe", "pipe"],
         });
-        const revertHash = hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
+        const revertHash =
+          hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
 
         console.log(`${success("✓")} Revert commit created successfully!`);
         console.log(`  ${revertHash}`);
       } catch (error: unknown) {
         if (error instanceof Error && error.message.includes("conflict")) {
           console.log();
-          console.log(
-            `${attention("⚠ Conflicts detected during revert.")}`,
-          );
+          console.log(`${attention("⚠ Conflicts detected during revert.")}`);
           console.log();
           console.log("  Resolve conflicts manually, then:");
-          console.log(`    ${textColors.brightCyan("lab revert --continue")} - Continue after resolution`);
-          console.log(`    ${textColors.brightCyan("lab revert --abort")} - Abort revert`);
+          console.log(
+            `    ${textColors.brightCyan("lab revert --continue")} - Continue after resolution`,
+          );
+          console.log(
+            `    ${textColors.brightCyan("lab revert --abort")} - Abort revert`,
+          );
           process.exit(1);
         }
         throw error;
@@ -376,13 +408,18 @@ async function revertAction(options: {
       process.exit(1);
     }
 
+    // Detect emoji support for display (always detect, even if no config)
+    const emojiModeActive = detectEmojiSupport();
+
     // Check for config if --no-edit is not used (config needed for commit workflow)
     if (!options.noEdit) {
       const configResult = await loadConfig();
       if (configResult.source === "defaults") {
         Logger.error("Configuration not found");
         console.error("\n  Run 'lab init' to create configuration file.");
-        console.error("  Or use --no-edit to use Git's default revert message.\n");
+        console.error(
+          "  Or use --no-edit to use Git's default revert message.\n",
+        );
         process.exit(1);
       }
     }
@@ -390,9 +427,7 @@ async function revertAction(options: {
     // Check for uncommitted changes
     if (hasUncommittedChanges()) {
       console.log();
-      console.log(
-        `${attention("⚠ You have uncommitted changes.")}`,
-      );
+      console.log(`${attention("⚠ You have uncommitted changes.")}`);
       console.log("  Revert may cause conflicts.");
       console.log();
     }
@@ -404,7 +439,10 @@ async function revertAction(options: {
     }
 
     const branch = options.branch || currentBranch;
-    const maxCommits = Math.min(parseInt(options.limit?.toString() || "50", 10), 100);
+    const maxCommits = Math.min(
+      parseInt(options.limit?.toString() || "50", 10),
+      100,
+    );
     const pageSize = 10;
 
     // Initial fetch
@@ -420,10 +458,13 @@ async function revertAction(options: {
 
       const remaining = maxCommits - totalFetched;
       const toFetch = Math.min(remaining, 50);
-      
+
       // Get the last commit hash we've already fetched to exclude it from next fetch
-      const lastHash = allCommits.length > 0 ? allCommits[allCommits.length - 1].hash : undefined;
-      
+      const lastHash =
+        allCommits.length > 0
+          ? allCommits[allCommits.length - 1].hash
+          : undefined;
+
       const newCommits = fetchCommits(toFetch, branch, lastHash);
       allCommits = [...allCommits, ...newCommits];
       totalFetched = allCommits.length;
@@ -448,25 +489,40 @@ async function revertAction(options: {
       const pageCommits = allCommits.slice(startIndex, endIndex);
 
       // Check if there are more pages to show (either already loaded or can be fetched)
-      const hasMorePages = (currentPage + 1) * pageSize < allCommits.length || hasMore;
+      const hasMorePages =
+        (currentPage + 1) * pageSize < allCommits.length || hasMore;
       const hasPreviousPage = currentPage > 0;
 
-      displayRevertCommitList(pageCommits, startIndex, totalFetched, hasMore, hasPreviousPage, hasMorePages);
+      displayRevertCommitList(
+        pageCommits,
+        startIndex,
+        totalFetched,
+        hasMore,
+        hasPreviousPage,
+        hasMorePages,
+        emojiModeActive,
+      );
 
       // Build navigation hints
       const navHints: string[] = [];
-      navHints.push(`${textColors.brightCyan("0-9")} ${textColors.white("to select commit")}`);
+      navHints.push(
+        `${textColors.brightCyan("0-9")} ${textColors.white("to select commit")}`,
+      );
       if (hasPreviousPage) {
-        navHints.push(`${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`);
+        navHints.push(
+          `${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`,
+        );
       }
       if (hasMorePages) {
-        navHints.push(`${textColors.brightYellow("n")} ${textColors.white("for next batch")}`);
+        navHints.push(
+          `${textColors.brightYellow("n")} ${textColors.white("for next batch")}`,
+        );
       }
-      navHints.push(`${textColors.brightYellow("Esc")} ${textColors.white("to cancel")}`);
-      
-      console.log(
-        `  ${textColors.white("Press")} ${navHints.join(`, `)}`,
+      navHints.push(
+        `${textColors.brightYellow("Esc")} ${textColors.white("to cancel")}`,
       );
+
+      console.log(`  ${textColors.white("Press")} ${navHints.join(`, `)}`);
 
       // Wait for input
       const stdin = process.stdin;
@@ -480,7 +536,9 @@ async function revertAction(options: {
 
       readline.emitKeypressEvents(stdin);
 
-      const selection = await new Promise<number | "next" | "previous" | "cancel">((resolve) => {
+      const selection = await new Promise<
+        number | "next" | "previous" | "cancel"
+      >((resolve) => {
         const onKeypress = (char: string, key: readline.Key) => {
           if (key.name === "escape" || (key.ctrl && key.name === "c")) {
             cleanup();
@@ -534,7 +592,7 @@ async function revertAction(options: {
       } else if (selection === "next") {
         // Move to next page
         const nextPageStart = (currentPage + 1) * pageSize;
-        
+
         // If we need more commits and they're available, load them
         if (nextPageStart >= allCommits.length && hasMore) {
           console.log("\n  Loading next batch...");
@@ -546,7 +604,7 @@ async function revertAction(options: {
             continue;
           }
         }
-        
+
         // Increment page if we have commits to show
         if (nextPageStart < allCommits.length) {
           currentPage++;
@@ -583,10 +641,16 @@ async function revertAction(options: {
  */
 export const revertCommand = new Command("revert")
   .description("Revert a commit using the project's commit workflow")
-  .option("-l, --limit <number>", "Maximum commits to fetch (default: 50, max: 100)", "50")
-  .option("-b, --branch <branch>", "Branch to revert from (default: current branch)")
+  .option(
+    "-l, --limit <number>",
+    "Maximum commits to fetch (default: 50, max: 100)",
+    "50",
+  )
+  .option(
+    "-b, --branch <branch>",
+    "Branch to revert from (default: current branch)",
+  )
   .option("--no-edit", "Skip commit message editing (use Git defaults)")
   .option("--continue", "Continue revert after conflict resolution")
   .option("--abort", "Abort revert in progress")
   .action(revertAction);
-

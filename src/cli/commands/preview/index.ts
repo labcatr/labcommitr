@@ -6,6 +6,7 @@
 
 import { Command } from "commander";
 import { Logger } from "../../../lib/logger.js";
+import { detectEmojiSupport } from "../../../lib/util/emoji.js";
 import {
   isGitRepository,
   getCurrentBranch,
@@ -72,10 +73,13 @@ async function previewAction(options: {
 
       const remaining = maxCommits - totalFetched;
       const toFetch = Math.min(remaining, 50);
-      
+
       // Get the last commit hash we've already fetched to exclude it from next fetch
-      const lastHash = allCommits.length > 0 ? allCommits[allCommits.length - 1].hash : undefined;
-      
+      const lastHash =
+        allCommits.length > 0
+          ? allCommits[allCommits.length - 1].hash
+          : undefined;
+
       const newCommits = fetchCommits(toFetch, branch, lastHash);
       allCommits = [...allCommits, ...newCommits];
       totalFetched = allCommits.length;
@@ -90,6 +94,9 @@ async function previewAction(options: {
       process.exit(0);
     }
 
+    // Detect emoji support for display
+    const emojiModeActive = detectEmojiSupport();
+
     // Main loop
     let exit = false;
     let viewingDetails = false;
@@ -102,7 +109,12 @@ async function previewAction(options: {
 
       if (viewingDetails && currentDetailCommit) {
         // Detail view
-        displayCommitDetails(currentDetailCommit, showBody, showFiles);
+        displayCommitDetails(
+          currentDetailCommit,
+          showBody,
+          showFiles,
+          emojiModeActive,
+        );
         console.log(
           `  ${textColors.white("Press")} ${textColors.brightYellow("b")} ${textColors.white("to toggle body,")} ${textColors.brightYellow("f")} ${textColors.white("to toggle files,")} ${textColors.brightYellow("d")} ${textColors.white("for diff,")} ${textColors.brightYellow("r")} ${textColors.white("to revert,")} ${textColors.brightYellow("←")} ${textColors.white("to go back")}`,
         );
@@ -131,9 +143,7 @@ async function previewAction(options: {
             );
             const diff = getCommitDiff(currentDetailCommit.hash);
             console.log(diff);
-            console.log(
-              `\n${textColors.white("Press any key to go back...")}`,
-            );
+            console.log(`\n${textColors.white("Press any key to go back...")}`);
             await new Promise((resolve) => {
               process.stdin.setRawMode(true);
               process.stdin.resume();
@@ -176,12 +186,25 @@ async function previewAction(options: {
         const maxIndex = pageCommits.length - 1;
 
         // Check if there are more pages to show (either already loaded or can be fetched)
-        const hasMorePages = (currentPage + 1) * pageSize < allCommits.length || hasMore;
+        const hasMorePages =
+          (currentPage + 1) * pageSize < allCommits.length || hasMore;
         const hasPreviousPage = currentPage > 0;
 
-        displayCommitList(pageCommits, startIndex, totalFetched, hasMore, hasPreviousPage, hasMorePages);
+        displayCommitList(
+          pageCommits,
+          startIndex,
+          totalFetched,
+          hasMore,
+          hasPreviousPage,
+          hasMorePages,
+          emojiModeActive,
+        );
 
-        const action = await waitForListAction(maxIndex, hasMorePages, hasPreviousPage);
+        const action = await waitForListAction(
+          maxIndex,
+          hasMorePages,
+          hasPreviousPage,
+        );
 
         if (typeof action === "number") {
           // View commit details
@@ -214,7 +237,7 @@ async function previewAction(options: {
         } else if (action === "next") {
           // Move to next page
           const nextPageStart = (currentPage + 1) * pageSize;
-          
+
           // If we need more commits and they're available, load them
           if (nextPageStart >= allCommits.length && hasMore) {
             console.log("\n  Loading next batch...");
@@ -226,7 +249,7 @@ async function previewAction(options: {
               continue;
             }
           }
-          
+
           // Increment page if we have commits to show
           if (nextPageStart < allCommits.length) {
             currentPage++;
@@ -263,7 +286,13 @@ async function previewAction(options: {
  */
 export const previewCommand = new Command("preview")
   .description("Browse and inspect commit history")
-  .option("-l, --limit <number>", "Maximum commits to fetch (default: 50, max: 100)", "50")
-  .option("-b, --branch <branch>", "Branch to preview (default: current branch)")
+  .option(
+    "-l, --limit <number>",
+    "Maximum commits to fetch (default: 50, max: 100)",
+    "50",
+  )
+  .option(
+    "-b, --branch <branch>",
+    "Branch to preview (default: current branch)",
+  )
   .action(previewAction);
-

@@ -31,11 +31,13 @@ After installation, use either `labcommitr` or `lab` to run commands.
 ## Quick Start
 
 1. **Initialize configuration** in your project:
+
    ```bash
    lab init
    ```
 
 2. **Create your first commit**:
+
    ```bash
    lab commit
    ```
@@ -52,12 +54,14 @@ After installation, use either `labcommitr` or `lab` to run commands.
 Create a standardized commit following your project's configuration.
 
 **Usage:**
+
 ```bash
 lab commit [options]
 lab c [options]  # Short alias
 ```
 
 **Options:**
+
 - `-t, --type <type>` - Commit type (e.g., `feat`, `fix`, `docs`)
 - `-s, --scope <scope>` - Commit scope (e.g., `api`, `auth`, `ui`)
 - `-m, --message <message>` - Commit subject/message
@@ -65,6 +69,7 @@ lab c [options]  # Short alias
 - `--no-verify` - Bypass Git hooks
 
 **Examples:**
+
 ```bash
 # Interactive commit (prompts for missing fields)
 lab commit
@@ -80,6 +85,7 @@ lab commit -t fix -m "fix bug" --no-verify
 ```
 
 **Notes:**
+
 - Messages and body with spaces must be quoted
 - If all required fields are provided via flags, the commit is created immediately
 - If any required fields are missing, an interactive prompt guides you through completion
@@ -92,16 +98,19 @@ lab commit -t fix -m "fix bug" --no-verify
 Initialize Labcommitr configuration in your project. This creates a `.labcommitr.config.yaml` file with your chosen preset and preferences.
 
 **Usage:**
+
 ```bash
 lab init [options]
 lab i [options]  # Short alias
 ```
 
 **Options:**
+
 - `-f, --force` - Overwrite existing configuration file
 - `--preset <type>` - Use a specific preset without prompts (options: `conventional`, `gitmoji`, `angular`, `minimal`)
 
 **Examples:**
+
 ```bash
 # Interactive setup (recommended)
 lab init
@@ -114,6 +123,7 @@ lab init --preset conventional
 ```
 
 **What it does:**
+
 - Guides you through selecting a commit convention preset
 - Configures emoji support based on terminal capabilities
 - Sets up auto-staging preferences
@@ -121,6 +131,7 @@ lab init --preset conventional
 - Validates the generated configuration
 
 **Presets available:**
+
 - **Conventional Commits** - Popular across open-source and personal projects
 - **Angular Convention** - Strict format used by Angular and enterprise teams (includes `perf`, `build`, `ci` types)
 - **Gitmoji** - Emoji-based commits for visual clarity
@@ -133,6 +144,7 @@ lab init --preset conventional
 Manage and inspect Labcommitr configuration.
 
 **Usage:**
+
 ```bash
 lab config <subcommand>
 ```
@@ -144,14 +156,17 @@ lab config <subcommand>
 Display the currently loaded configuration with source information.
 
 **Usage:**
+
 ```bash
 lab config show [options]
 ```
 
 **Options:**
+
 - `-p, --path <path>` - Start configuration search from a specific directory
 
 **Examples:**
+
 ```bash
 # Show current configuration
 lab config show
@@ -161,6 +176,7 @@ lab config show --path /path/to/project
 ```
 
 **What it shows:**
+
 - Configuration source (file path or "defaults")
 - Emoji mode status
 - Full configuration in JSON format
@@ -173,15 +189,18 @@ lab config show --path /path/to/project
 Browse and inspect commit history interactively without modifying your repository.
 
 **Usage:**
+
 ```bash
 lab preview [options]
 ```
 
 **Options:**
+
 - `-l, --limit <number>` - Maximum commits to fetch (default: 50, max: 100)
 - `-b, --branch <branch>` - Branch to preview (default: current branch)
 
 **Examples:**
+
 ```bash
 # Browse commits on current branch
 lab preview
@@ -194,6 +213,7 @@ lab preview --limit 25
 ```
 
 **Interactive Features:**
+
 - **Commit List View:**
   - Navigate through commits with pagination (10 per page)
   - Press `0-9` to view details of a specific commit
@@ -211,6 +231,7 @@ lab preview --limit 25
   - Press `?` for help
 
 **Notes:**
+
 - Read-only operation - does not modify your repository
 - Fetches commits in batches of 50 (up to 100 total)
 - Works on current branch by default
@@ -223,11 +244,13 @@ lab preview --limit 25
 Revert a commit using the project's commit workflow. Select a commit interactively and create a revert commit following your project's commit message format.
 
 **Usage:**
+
 ```bash
 lab revert [options]
 ```
 
 **Options:**
+
 - `-l, --limit <number>` - Maximum commits to fetch (default: 50, max: 100)
 - `-b, --branch <branch>` - Branch to revert from (default: current branch)
 - `--no-edit` - Skip commit message editing (use Git's default revert message)
@@ -235,6 +258,7 @@ lab revert [options]
 - `--abort` - Abort revert in progress
 
 **Examples:**
+
 ```bash
 # Interactive revert (uses commit workflow)
 lab revert
@@ -253,6 +277,7 @@ lab revert --abort
 ```
 
 **Interactive Features:**
+
 - **Commit Selection:**
   - Browse commits with pagination (10 per page)
   - Press `0-9` to select a commit to revert
@@ -268,6 +293,7 @@ lab revert --abort
   - Handles conflicts with `--continue` and `--abort` options
 
 **Notes:**
+
 - Requires `.labcommitr.config.yaml` (unless using `--no-edit`)
 - Creates a new commit that undoes the selected commit
 - For merge commits, you'll be prompted to select which parent to revert to
@@ -288,9 +314,10 @@ Labcommitr uses a `.labcommitr.config.yaml` file in your project root. The confi
 See [`docs/CONFIG_SCHEMA.md`](docs/CONFIG_SCHEMA.md) for complete configuration documentation.
 
 **Configuration discovery:**
+
 - Searches from current directory up to project root
-- Falls back to global configuration if available
 - Uses sensible defaults if no configuration found
+- Global configuration support is planned for future releases (see [Planned Features](#planned-features))
 
 ---
 
@@ -322,12 +349,14 @@ pnpm run dev:cli test clean
 ```
 
 **Alternative:** You can also use `node dist/index-dev.js` instead of `pnpm run dev:cli`:
+
 ```bash
 node dist/index-dev.js test setup
 node dist/index-dev.js test shell
 ```
 
 **Available Scenarios:**
+
 - `existing-project` - Test adding Labcommitr to existing project
 - `with-changes` - Test commit command with various file states (default)
 - `with-history` - Test preview and revert with rich history
@@ -335,6 +364,7 @@ node dist/index-dev.js test shell
 - `with-conflicts` - Test conflict resolution workflows
 
 **Examples:**
+
 ```bash
 # Set up specific scenario
 pnpm run dev:cli test setup --scenario with-history
@@ -374,10 +404,6 @@ Before implementing any changes, please follow this process:
    - Follow the project's development guidelines
    - Ensure your commits follow the project's commit message format (you can set up using `lab init`)
 
-### Development Guidelines
-
-For detailed development guidelines, coding standards, and architecture information, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
-
 ### Questions?
 
 If you have questions or need clarification, feel free to open a discussion or issue.
@@ -386,4 +412,27 @@ If you have questions or need clarification, feel free to open a discussion or i
 
 ## Planned Features
 
-_No planned features at this time. Check back later or open an issue to suggest new features!_
+### Global Configuration
+
+Support for user-level global configuration files to enable consistent commit conventions across multiple projects. This will allow you to:
+
+- Set default commit types and preferences in a single location
+- Apply your preferred commit conventions to all projects automatically
+- Override global settings on a per-project basis when needed
+
+**Use cases:**
+
+- Developers working across multiple repositories who want consistent commit message formats
+- Teams that want to standardize commit conventions organization-wide
+- Personal projects where you want the same commit types everywhere
+
+The global configuration will be stored in OS-specific locations:
+
+- **macOS/Linux**: `~/.labcommitr.config.yaml` or XDG config directory
+- **Windows**: `%USERPROFILE%\.labcommitr.config.yaml` or AppData directory
+
+Project-specific configurations will always take precedence over global settings.
+
+---
+
+_Have a feature idea? Open an issue to suggest new features!_

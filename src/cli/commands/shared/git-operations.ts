@@ -75,12 +75,17 @@ function formatRelativeTime(date: Date): string {
   const diffMonths = Math.floor(diffDays / 30);
   const diffYears = Math.floor(diffDays / 365);
 
-  if (diffSecs < 60) return `${diffSecs} second${diffSecs !== 1 ? "s" : ""} ago`;
-  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+  if (diffSecs < 60)
+    return `${diffSecs} second${diffSecs !== 1 ? "s" : ""} ago`;
+  if (diffMins < 60)
+    return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-  if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks !== 1 ? "s" : ""} ago`;
-  if (diffMonths < 12) return `${diffMonths} month${diffMonths !== 1 ? "s" : ""} ago`;
+  if (diffWeeks < 4)
+    return `${diffWeeks} week${diffWeeks !== 1 ? "s" : ""} ago`;
+  if (diffMonths < 12)
+    return `${diffMonths} month${diffMonths !== 1 ? "s" : ""} ago`;
   return `${diffYears} year${diffYears !== 1 ? "s" : ""} ago`;
 }
 
@@ -174,7 +179,8 @@ export function getCommitDetails(hash: string): CommitInfo {
     throw new Error(`Invalid commit format: ${hash}`);
   }
 
-  const [fullHash, subject, authorName, authorEmail, dateStr, parentsStr] = parts;
+  const [fullHash, subject, authorName, authorEmail, dateStr, parentsStr] =
+    parts;
   const shortHash = fullHash.substring(0, 7);
   const parents = parentsStr ? parentsStr.trim().split(/\s+/) : [];
   const isMerge = parents.length > 1;
@@ -198,7 +204,9 @@ export function getCommitDetails(hash: string): CommitInfo {
   if (statOutput) {
     const statLines = statOutput.split("\n").filter((l) => l.trim());
     const lastLine = statLines[statLines.length - 1];
-    const match = lastLine.match(/(\d+) file(?:s)? changed(?:, (\d+) insertion(?:s)?)?(?:, (\d+) deletion(?:s)?)?/);
+    const match = lastLine.match(
+      /(\d+) file(?:s)? changed(?:, (\d+) insertion(?:s)?)?(?:, (\d+) deletion(?:s)?)?/,
+    );
     if (match) {
       fileStats = {
         filesChanged: parseInt(match[1], 10) || 0,
@@ -252,7 +260,10 @@ export function isMergeCommit(hash: string): boolean {
 export function getMergeParents(hash: string): MergeParent[] {
   try {
     const parentsStr = execGit(["log", "-1", "--format=%P", hash]);
-    const parentHashes = parentsStr.trim().split(/\s+/).filter((h) => h);
+    const parentHashes = parentsStr
+      .trim()
+      .split(/\s+/)
+      .filter((h) => h);
 
     return parentHashes.map((parentHash, index) => {
       const shortHash = parentHash.substring(0, 7);
@@ -305,4 +316,3 @@ export function hasUncommittedChanges(): boolean {
     return false;
   }
 }
-

@@ -24,6 +24,8 @@ docs/
 
 # Exclude build artifacts
 *.map
+**/*.map
+dist/**/*.map
 tsconfig.json
 .prettierrc*
 

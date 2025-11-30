@@ -1,16 +1,19 @@
 {
   "name": "@labcatr/labcommitr",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Labcommitr is a solution for building standardized git commits, hassle-free!",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx tsc",
+    "build:prod": "npx tsc && pnpm run clean:maps",
+    "clean:maps": "node scripts/clean-maps.js",
     "format": "pnpm run format:code",
     "format:ci": "pnpm run format:code",
     "format:code": "prettier -w \"**/*\" --ignore-unknown --cache",
     "version": "changeset version && pnpm install --no-frozen-lockfile && pnpm run format",
-    "dev:cli": "node dist/index-dev.js"
+    "dev:cli": "node dist/index-dev.js",
+    "prepublishOnly": "pnpm run build:prod"
   },
   "type": "module",
   "bin": {
@@ -29,6 +32,9 @@
   "homepage": "https://github.com/labcatr/labcommitr#readme",
   "author": "Trevor Fox",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@changesets/cli": "^2.29.7",
     "@clack/prompts": "^0.11.0",
@@ -56,7 +62,10 @@
     "dist/cli/commands/revert",
     "dist/cli/commands/shared",
     "dist/cli/utils",
-    "dist/lib"
+    "dist/lib",
+    "README.md",
+    "CHANGELOG.md",
+    "TESTING.md"
   ],
   "publishConfig": {
     "access": "public"
