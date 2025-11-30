@@ -180,9 +180,17 @@ export function getCommitDetails(hash: string): CommitInfo {
   const isMerge = parents.length > 1;
   const date = new Date(dateStr);
 
-  // Get body
+  // Get body - need to exclude the subject line
   const bodyOutput = execGit(["log", "-1", "--format=%B", hash]);
-  const body = bodyOutput.trim() || null;
+  let body: string | null = null;
+
+  if (bodyOutput) {
+    const trimmed = bodyOutput.trim();
+    // Split by first blank line (subject is first line, body is after)
+    const parts = trimmed.split(/\n\n/, 2);
+    // If there's content after the first blank line, that's the body
+    body = parts.length > 1 && parts[1].trim() ? parts[1].trim() : null;
+  }
 
   // Get file stats
   const statOutput = execGit(["show", "--stat", "--format=", hash]);
