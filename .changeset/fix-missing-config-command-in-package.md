@@ -9,4 +9,3 @@ fix: include config and commit command files in published package
 - Fixes ERR_MODULE_NOT_FOUND error when using lab commands
 - Config and commit commands were missing from published package causing runtime errors
 - Resolves issue where command files exist but weren't included in npm package
-
