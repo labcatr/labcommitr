@@ -1,6 +1,6 @@
 {
   "name": "@labcatr/labcommitr",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Labcommitr is a solution for building standardized git commits, hassle-free!",
   "main": "dist/index.js",
   "scripts": {
