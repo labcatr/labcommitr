@@ -87,7 +87,7 @@ export function displayRevertCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
-  
+
   if (hasMore) {
     console.log(
       `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+`,
@@ -130,7 +130,9 @@ export function displayRevertConfirmation(commit: CommitInfo): void {
     `${label("confirm", "green")}  ${textColors.pureWhite("Revert Confirmation")}`,
   );
   console.log();
-  console.log(`  ${textColors.brightWhite("Reverting commit:")} ${commit.shortHash}`);
+  console.log(
+    `  ${textColors.brightWhite("Reverting commit:")} ${commit.shortHash}`,
+  );
   console.log(`  ${textColors.brightWhite("Original:")} ${commit.subject}`);
   console.log();
   console.log(
@@ -142,7 +144,9 @@ export function displayRevertConfirmation(commit: CommitInfo): void {
 /**
  * Prompt for revert confirmation
  */
-export async function promptRevertConfirmation(): Promise<"confirm" | "edit" | "cancel"> {
+export async function promptRevertConfirmation(): Promise<
+  "confirm" | "edit" | "cancel"
+> {
   const confirmed = await confirm({
     message: `${label("confirm", "green")}  ${textColors.pureWhite("Proceed with revert?")}`,
     initialValue: true,
@@ -163,4 +167,3 @@ export async function promptRevertConfirmation(): Promise<"confirm" | "edit" | "
 
   return "cancel";
 }
-

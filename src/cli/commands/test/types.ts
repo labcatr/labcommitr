@@ -24,4 +24,3 @@ export interface TestState {
   sandboxPath: string;
   isActive: boolean;
 }
-

@@ -393,7 +393,10 @@ export class ConfigValidator {
     const shortcuts = config.advanced.shortcuts;
 
     // Validate enabled
-    if (shortcuts.enabled !== undefined && typeof shortcuts.enabled !== "boolean") {
+    if (
+      shortcuts.enabled !== undefined &&
+      typeof shortcuts.enabled !== "boolean"
+    ) {
       errors.push({
         field: "advanced.shortcuts.enabled",
         fieldDisplay: "Shortcuts → Enabled",
@@ -406,7 +409,10 @@ export class ConfigValidator {
     }
 
     // Validate display_hints
-    if (shortcuts.display_hints !== undefined && typeof shortcuts.display_hints !== "boolean") {
+    if (
+      shortcuts.display_hints !== undefined &&
+      typeof shortcuts.display_hints !== "boolean"
+    ) {
       errors.push({
         field: "advanced.shortcuts.display_hints",
         fieldDisplay: "Shortcuts → Display Hints",
@@ -420,12 +426,16 @@ export class ConfigValidator {
 
     // Validate prompts structure
     if (shortcuts.prompts !== undefined) {
-      if (typeof shortcuts.prompts !== "object" || Array.isArray(shortcuts.prompts)) {
+      if (
+        typeof shortcuts.prompts !== "object" ||
+        Array.isArray(shortcuts.prompts)
+      ) {
         errors.push({
           field: "advanced.shortcuts.prompts",
           fieldDisplay: "Shortcuts → Prompts",
           message: 'Field "prompts" must be an object',
-          userMessage: "The prompts section must be an object with prompt names as keys",
+          userMessage:
+            "The prompts section must be an object with prompt names as keys",
           value: shortcuts.prompts,
           expectedFormat: "object with prompt configurations",
           issue: "Found non-object value",
@@ -453,7 +463,10 @@ export class ConfigValidator {
 
           // Validate mapping
           if (promptConfig.mapping !== undefined) {
-            if (typeof promptConfig.mapping !== "object" || Array.isArray(promptConfig.mapping)) {
+            if (
+              typeof promptConfig.mapping !== "object" ||
+              Array.isArray(promptConfig.mapping)
+            ) {
               errors.push({
                 field: `advanced.shortcuts.prompts.${promptName}.mapping`,
                 fieldDisplay: `Shortcuts → Prompts → ${promptName} → Mapping`,

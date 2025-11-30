@@ -111,4 +111,3 @@ export function getShortcutForValue(
   }
   return mapping.valueToKey[value];
 }
-

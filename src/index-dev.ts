@@ -27,7 +27,9 @@ async function main(): Promise<void> {
       error.message.includes("too many arguments")
     ) {
       console.error("\n✗ Error: Too many arguments");
-      console.error("\n  Your message or body contains spaces and needs to be quoted.");
+      console.error(
+        "\n  Your message or body contains spaces and needs to be quoted.",
+      );
       console.error("\n  Fix: Use quotes around values with spaces:");
       console.error(`    • Message: -m "your message here"`);
       console.error(`    • Body: -b "your body here"`);
@@ -43,4 +45,3 @@ async function main(): Promise<void> {
 
 // Execute CLI
 main();
-
