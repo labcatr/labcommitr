@@ -34,6 +34,35 @@ export interface BodyConfig {
 }
 
 /**
+ * Keyboard shortcuts configuration
+ * Enables single-character shortcuts for faster prompt navigation
+ */
+export interface ShortcutsConfig {
+  /** Master toggle - enables/disables all shortcuts (default: false) */
+  enabled: boolean;
+  /** Whether to display shortcut hints in prompts (default: true) */
+  display_hints: boolean;
+  /** Per-prompt shortcut mappings (optional) */
+  prompts?: {
+    /** Commit type selection shortcuts */
+    type?: {
+      /** Mapping of shortcut key → option value */
+      mapping?: Record<string, string>;
+    };
+    /** Preview action shortcuts */
+    preview?: {
+      /** Mapping of shortcut key → action value */
+      mapping?: Record<string, string>;
+    };
+    /** Body input method selection shortcuts */
+    body?: {
+      /** Mapping of shortcut key → method value */
+      mapping?: Record<string, string>;
+    };
+  };
+}
+
+/**
  * Main configuration interface - fully resolved with all defaults applied
  * This represents the complete configuration structure after processing
  */
@@ -82,6 +111,8 @@ export interface LabcommitrConfig {
       /** Sign commits with GPG */
       sign_commits: boolean;
     };
+    /** Keyboard shortcuts configuration */
+    shortcuts?: ShortcutsConfig;
   };
 }
 

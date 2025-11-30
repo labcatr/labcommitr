@@ -36,9 +36,9 @@ coverage/
 *.lcov
 
 # Testing
-.test-temp/
+# Sandbox directory for testing Labcommitr commands (scripts in scripts/ are tracked)
+.sandbox/
 test-results/
-scripts/
 
 # npm/yarn/pnpm
 npm-debug.log*
@@ -61,11 +61,13 @@ Thumbs.db
 .project
 .classpath
 .settings/
+.cursor/
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
+
 
 
 ### Other

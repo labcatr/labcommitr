@@ -66,18 +66,25 @@ function handleCancel(value: unknown): void {
  * Preset option data structure
  * Keeps descriptions for future use while labels only show examples
  */
-const PRESET_OPTIONS = [
+const PRESET_OPTIONS: Array<{
+  value: string;
+  name: string;
+  description: string;
+  example: string;
+  hint?: string;
+}> = [
   {
     value: "conventional",
     name: "Conventional Commits (Recommended)",
     description: "Popular across open-source and personal projects.",
-    example: "fix(dining): add security to treat container",
+    example: "fix(api): add security to treat container",
   },
   {
     value: "angular",
     name: "Angular Convention",
     description: "Strict format used by Angular and enterprise teams.",
-    example: "fix(snacks): add security to treat container",
+    example: "perf(compiler): optimize template parsing",
+    hint: "Includes perf, build, ci types",
   },
   {
     value: "minimal",
@@ -85,7 +92,7 @@ const PRESET_OPTIONS = [
     description: "Start with basics, customize everything yourself later.",
     example: "fix: add security to treat container",
   },
-] as const;
+];
 
 /**
  * Prompt for commit style preset selection
@@ -96,6 +103,7 @@ export async function promptPreset(): Promise<string> {
     options: PRESET_OPTIONS.map((option) => ({
       value: option.value,
       label: `${option.name} - e.g., ${option.example}`,
+      ...(option.hint && { hint: option.hint }), // Include hint if present
       // description is kept in PRESET_OPTIONS for future use
     })),
   });
