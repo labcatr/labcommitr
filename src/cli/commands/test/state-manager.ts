@@ -4,7 +4,13 @@
  * Manages test environment state and metadata
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "fs";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  unlinkSync,
+} from "fs";
 import { join } from "path";
 import type { TestState, ScenarioName } from "./types.js";
 
@@ -45,10 +51,7 @@ export function loadState(sandboxPath: string): TestState | null {
 /**
  * Save test state
  */
-export function saveState(
-  sandboxPath: string,
-  scenario: ScenarioName,
-): void {
+export function saveState(sandboxPath: string, scenario: ScenarioName): void {
   mkdirSync(sandboxPath, { recursive: true });
 
   const state: TestState = {
@@ -81,4 +84,3 @@ export function isSandboxValid(sandboxPath: string): boolean {
     existsSync(getStateFilePath(sandboxPath))
   );
 }
-

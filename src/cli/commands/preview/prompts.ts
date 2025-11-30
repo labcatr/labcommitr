@@ -80,7 +80,7 @@ export function displayCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
-  
+
   if (hasMore) {
     console.log(
       `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+`,
@@ -91,22 +91,30 @@ export function displayCommitList(
     );
   }
   console.log();
-  
+
   // Build navigation hints
   const navHints: string[] = [];
-  navHints.push(`${textColors.brightCyan("0-9")} ${textColors.white("to view details")}`);
+  navHints.push(
+    `${textColors.brightCyan("0-9")} ${textColors.white("to view details")}`,
+  );
   if (hasPreviousPage) {
-    navHints.push(`${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`);
+    navHints.push(
+      `${textColors.brightYellow("p")} ${textColors.white("for previous batch")}`,
+    );
   }
   if (hasMorePages) {
-    navHints.push(`${textColors.brightYellow("n")} ${textColors.white("for next batch")}`);
+    navHints.push(
+      `${textColors.brightYellow("n")} ${textColors.white("for next batch")}`,
+    );
   }
-  navHints.push(`${textColors.brightYellow("?")} ${textColors.white("for help")}`);
-  navHints.push(`${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`);
-  
-  console.log(
-    `  ${textColors.white("Press")} ${navHints.join(`, `)}`,
+  navHints.push(
+    `${textColors.brightYellow("?")} ${textColors.white("for help")}`,
   );
+  navHints.push(
+    `${textColors.brightYellow("Esc")} ${textColors.white("to exit")}`,
+  );
+
+  console.log(`  ${textColors.white("Press")} ${navHints.join(`, `)}`);
 }
 
 /**
@@ -125,9 +133,13 @@ export function displayCommitDetails(
   console.log(`  ${textColors.brightWhite("Hash:")} ${commit.hash}`);
   console.log(`  ${textColors.brightWhite("Subject:")} ${commit.subject}`);
   console.log();
-  console.log(`  ${textColors.brightWhite("Author:")} ${commit.author.name} <${commit.author.email}>`);
+  console.log(
+    `  ${textColors.brightWhite("Author:")} ${commit.author.name} <${commit.author.email}>`,
+  );
   console.log(`  ${textColors.brightWhite("Date:")} ${commit.date.absolute}`);
-  console.log(`  ${textColors.brightWhite("Relative:")} ${commit.date.relative}`);
+  console.log(
+    `  ${textColors.brightWhite("Relative:")} ${commit.date.relative}`,
+  );
   console.log();
 
   if (commit.parents.length > 0) {
@@ -147,10 +159,14 @@ export function displayCommitDetails(
     console.log(`  ${textColors.brightWhite("File Statistics:")}`);
     console.log(`    Files changed: ${commit.fileStats.filesChanged}`);
     if (commit.fileStats.additions !== undefined) {
-      console.log(`    Additions: ${textColors.gitAdded(`+${commit.fileStats.additions}`)}`);
+      console.log(
+        `    Additions: ${textColors.gitAdded(`+${commit.fileStats.additions}`)}`,
+      );
     }
     if (commit.fileStats.deletions !== undefined) {
-      console.log(`    Deletions: ${textColors.gitDeleted(`-${commit.fileStats.deletions}`)}`);
+      console.log(
+        `    Deletions: ${textColors.gitDeleted(`-${commit.fileStats.deletions}`)}`,
+      );
     }
     console.log();
   }
@@ -362,4 +378,3 @@ export async function waitForListAction(
     stdin.on("keypress", onKeypress);
   });
 }
-
