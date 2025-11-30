@@ -90,10 +90,12 @@ export function generateRevertSubject(
   if (base.length > maxLength) {
     // Reserve space for "Revert \"...\""
     const availableLength = maxLength - 15; // "Revert \"...\""
-    const truncated = originalSubject.substring(0, Math.max(0, availableLength));
+    const truncated = originalSubject.substring(
+      0,
+      Math.max(0, availableLength),
+    );
     return `Revert "${truncated}..."`;
   }
 
   return base;
 }
-

@@ -182,9 +182,17 @@ export function mergeWithDefaults(rawConfig: RawConfig): LabcommitrConfig {
     // Handle nested shortcuts configuration
     if (rawConfig.advanced.shortcuts) {
       merged.advanced.shortcuts = {
-        enabled: rawConfig.advanced.shortcuts.enabled ?? merged.advanced.shortcuts?.enabled ?? true,
-        display_hints: rawConfig.advanced.shortcuts.display_hints ?? merged.advanced.shortcuts?.display_hints ?? true,
-        prompts: rawConfig.advanced.shortcuts.prompts ?? merged.advanced.shortcuts?.prompts,
+        enabled:
+          rawConfig.advanced.shortcuts.enabled ??
+          merged.advanced.shortcuts?.enabled ??
+          true,
+        display_hints:
+          rawConfig.advanced.shortcuts.display_hints ??
+          merged.advanced.shortcuts?.display_hints ??
+          true,
+        prompts:
+          rawConfig.advanced.shortcuts.prompts ??
+          merged.advanced.shortcuts?.prompts,
       };
     }
   }

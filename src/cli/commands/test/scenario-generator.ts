@@ -30,7 +30,8 @@ function execGit(sandboxPath: string, args: string[]): void {
     // With encoding: "utf-8", stderr/stdout are strings or null
     const stderr = result.stderr || "";
     const stdout = result.stdout || "";
-    const errorMessage = stderr || stdout || `Command exited with status ${result.status}`;
+    const errorMessage =
+      stderr || stdout || `Command exited with status ${result.status}`;
     throw new Error(
       `Git command failed: git ${args.join(" ")}\n${errorMessage}`,
     );
@@ -182,7 +183,11 @@ function generateCommitHistory(
 async function createUncommittedChanges(sandboxPath: string): Promise<void> {
   // Modified files
   for (let i = 1; i <= 4; i++) {
-    const filePath = join(sandboxPath, "src", `component-${String.fromCharCode(96 + i)}.ts`);
+    const filePath = join(
+      sandboxPath,
+      "src",
+      `component-${String.fromCharCode(96 + i)}.ts`,
+    );
     writeFileSync(
       filePath,
       `// Component ${String.fromCharCode(96 + i)}\nexport class Component${String.fromCharCode(96 + i).toUpperCase()} {}\n// Modified\n`,
@@ -191,7 +196,11 @@ async function createUncommittedChanges(sandboxPath: string): Promise<void> {
 
   // Added files
   for (let i = 1; i <= 3; i++) {
-    const filePath = join(sandboxPath, "src", `service-${String.fromCharCode(96 + i)}.ts`);
+    const filePath = join(
+      sandboxPath,
+      "src",
+      `service-${String.fromCharCode(96 + i)}.ts`,
+    );
     writeFileSync(
       filePath,
       `// New service ${String.fromCharCode(96 + i)}\nexport class Service${String.fromCharCode(96 + i).toUpperCase()} {}\n`,
@@ -208,17 +217,17 @@ async function createUncommittedChanges(sandboxPath: string): Promise<void> {
     const fileName = `old-util-${i}.js`;
     const filePath = join(sandboxPath, "lib", fileName);
     const relativePath = `lib/${fileName}`;
-    
+
     // Create file if it doesn't exist
     if (!existsSync(filePath)) {
       writeFileSync(filePath, `// Old utility ${i}\n`);
       filesToDelete.push({ filePath, relativePath });
     }
   }
-  
+
   // Add and commit all files together
   if (filesToDelete.length > 0) {
-    const relativePaths = filesToDelete.map(f => f.relativePath);
+    const relativePaths = filesToDelete.map((f) => f.relativePath);
     execGit(sandboxPath, ["add", ...relativePaths]);
     execGit(sandboxPath, [
       "commit",
@@ -227,7 +236,7 @@ async function createUncommittedChanges(sandboxPath: string): Promise<void> {
       "--no-verify",
     ]);
   }
-  
+
   // Now remove each file (they should all exist at this point)
   // Use git rm to stage the deletion, then unstage it to create unstaged deletion
   for (const { filePath, relativePath } of filesToDelete) {
@@ -258,16 +267,16 @@ async function createUncommittedChanges(sandboxPath: string): Promise<void> {
     const oldPath = join(sandboxPath, "lib", oldName);
     const oldRelativePath = `lib/${oldName}`;
     const newRelativePath = `lib/${newName}`;
-    
+
     if (!existsSync(oldPath)) {
       writeFileSync(oldPath, `// ${oldName}\n`);
       filesToRename.push({ oldPath, oldRelativePath, newRelativePath });
     }
   }
-  
+
   // Add and commit all files together
   if (filesToRename.length > 0) {
-    const relativePaths = filesToRename.map(f => f.oldRelativePath);
+    const relativePaths = filesToRename.map((f) => f.oldRelativePath);
     execGit(sandboxPath, ["add", ...relativePaths]);
     execGit(sandboxPath, [
       "commit",
@@ -276,7 +285,7 @@ async function createUncommittedChanges(sandboxPath: string): Promise<void> {
       "--no-verify",
     ]);
   }
-  
+
   // Now rename each file (they should all exist at this point)
   // For unstaged renames, we manually move the file (not git mv) so git sees it as
   // an unstaged deletion of old file and unstaged addition of new file
@@ -338,12 +347,7 @@ function createConflictState(sandboxPath: string): void {
   execGit(sandboxPath, ["checkout", "main"]);
   writeFileSync(conflictFile, "// Modified on main\n");
   execGit(sandboxPath, ["add", conflictFile]);
-  execGit(sandboxPath, [
-    "commit",
-    "-m",
-    "feat: modify on main",
-    "--no-verify",
-  ]);
+  execGit(sandboxPath, ["commit", "-m", "feat: modify on main", "--no-verify"]);
 
   // Attempt merge to create conflict
   try {
@@ -370,7 +374,10 @@ async function copyConfig(sandboxPath: string): Promise<void> {
 
     if (existsSync(configPath)) {
       const configContent = readFileSync(configPath, "utf-8");
-      writeFileSync(join(sandboxPath, ".labcommitr.config.yaml"), configContent);
+      writeFileSync(
+        join(sandboxPath, ".labcommitr.config.yaml"),
+        configContent,
+      );
     }
   }
 }
@@ -430,4 +437,3 @@ export async function generateScenario(
       break;
   }
 }
-

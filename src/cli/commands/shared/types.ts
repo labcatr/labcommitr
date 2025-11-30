@@ -83,4 +83,3 @@ export interface MergeParent {
   /** Full hash */
   hash: string;
 }
-

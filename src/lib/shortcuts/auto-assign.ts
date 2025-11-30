@@ -81,4 +81,3 @@ function findAvailableShortcut(
 
   return null; // No available shortcut
 }
-

@@ -10,4 +10,3 @@ export interface RevertState {
   useCommitWorkflow: boolean; // true unless --no-edit
   conflictDetected: boolean;
 }
-

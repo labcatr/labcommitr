@@ -68,4 +68,3 @@ export function getScenario(name: string): ScenarioMetadata | null {
 export function listScenarios(): ScenarioMetadata[] {
   return Object.values(SCENARIOS);
 }
-

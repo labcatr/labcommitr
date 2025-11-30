@@ -34,4 +34,3 @@ export const DEFAULT_CHAR_SET: ShortcutCharacterSet = {
   allowedChars: "abcdefghijklmnopqrstuvwxyz".split(""),
   priority: "first",
 };
-

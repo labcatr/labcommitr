@@ -45,4 +45,3 @@ export function handleShortcutInput(
  *
  * Future enhancement: Implement full input interception wrapper.
  */
-

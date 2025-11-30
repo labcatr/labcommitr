@@ -18,7 +18,12 @@ import {
   clearState,
   isSandboxValid,
 } from "./state-manager.js";
-import { SCENARIOS, DEFAULT_SCENARIO, listScenarios, getScenario } from "./scenarios.js";
+import {
+  SCENARIOS,
+  DEFAULT_SCENARIO,
+  listScenarios,
+  getScenario,
+} from "./scenarios.js";
 import type { ScenarioName } from "./types.js";
 import { textColors, success, attention } from "../init/colors.js";
 
@@ -163,7 +168,9 @@ async function statusAction(): Promise<void> {
   if (!state || !isSandboxValid(sandboxPath)) {
     console.log("  No active test environment.");
     console.log();
-    console.log(`  Run ${textColors.brightCyan("pnpm run dev:cli test setup")} to create one.`);
+    console.log(
+      `  Run ${textColors.brightCyan("pnpm run dev:cli test setup")} to create one.`,
+    );
     console.log();
     return;
   }
@@ -172,7 +179,9 @@ async function statusAction(): Promise<void> {
 
   console.log(`  ${textColors.brightWhite("Scenario:")} ${state.scenario}`);
   if (scenario) {
-    console.log(`  ${textColors.brightWhite("Description:")} ${scenario.description}`);
+    console.log(
+      `  ${textColors.brightWhite("Description:")} ${scenario.description}`,
+    );
   }
   console.log(`  ${textColors.brightWhite("Sandbox:")} ${sandboxPath}`);
   console.log();
@@ -187,7 +196,9 @@ async function statusAction(): Promise<void> {
 
     if (gitStatus) {
       const lines = gitStatus.split("\n").length;
-      console.log(`  ${textColors.brightWhite("Uncommitted changes:")} ${lines} file(s)`);
+      console.log(
+        `  ${textColors.brightWhite("Uncommitted changes:")} ${lines} file(s)`,
+      );
     } else {
       console.log(`  ${textColors.brightWhite("Working directory:")} clean`);
     }
@@ -207,7 +218,9 @@ function listScenariosAction(): void {
   console.log();
 
   listScenarios().forEach((scenario) => {
-    console.log(`  ${textColors.brightCyan("•")} ${textColors.brightWhite(scenario.name)}`);
+    console.log(
+      `  ${textColors.brightCyan("•")} ${textColors.brightWhite(scenario.name)}`,
+    );
     console.log(`    ${textColors.white(scenario.description)}`);
     console.log();
   });
@@ -230,9 +243,7 @@ function shellAction(): void {
     `${textColors.brightCyan("◐")} Opening shell in test environment...`,
   );
   console.log();
-  console.log(
-    `  ${textColors.white("Sandbox:")} ${sandboxPath}`,
-  );
+  console.log(`  ${textColors.white("Sandbox:")} ${sandboxPath}`);
   console.log(
     `  ${textColors.white("Exit with:")} ${textColors.brightCyan("exit")} or ${textColors.brightCyan("Ctrl+D")}`,
   );
@@ -286,4 +297,3 @@ export const testCommand = new Command("test")
       .description("Open interactive shell in test environment")
       .action(shellAction),
   );
-

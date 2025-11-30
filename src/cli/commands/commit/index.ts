@@ -449,9 +449,8 @@ export async function commitAction(options: {
           type = typeResult.type;
           emoji = typeResult.emoji;
           // Re-validate scope if type changed (scope requirements might have changed)
-          const isScopeRequired = config.validation.require_scope_for.includes(
-            type,
-          );
+          const isScopeRequired =
+            config.validation.require_scope_for.includes(type);
           if (isScopeRequired && !scope) {
             // Scope is now required, prompt for it
             scope = await promptScope(config, type, undefined, scope);
