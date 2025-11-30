@@ -61,7 +61,7 @@ export function detectEditor(): string | null {
     if (envEditor.includes("/") || envEditor.includes("\\")) {
       try {
         accessSync(envEditor, constants.F_OK);
-        return envEditor.trim();
+      return envEditor.trim();
       } catch {
         // Path doesn't exist, try to find it as a command
       }
