@@ -2,22 +2,30 @@
 
 A simple, flexible testing environment for testing Labcommitr commands in isolated git repositories.
 
+**Note:** Test commands are **development-only** and are not available in the published package. They can only be used when running from the source repository.
+
 ## Quick Start
 
 ```bash
 # Set up test environment (default scenario)
-lab test setup
+pnpm run dev:cli test setup
 
 # Open shell in test environment
-lab test shell
+pnpm run dev:cli test shell
 
-# Run commands normally
+# Run commands normally (use regular lab command in shell)
 lab commit
 lab preview
 lab revert
 
 # Exit shell when done
 exit
+```
+
+**Alternative:** You can also use `node dist/index-dev.js` instead of `pnpm run dev:cli`:
+```bash
+node dist/index-dev.js test setup
+node dist/index-dev.js test shell
 ```
 
 ---
@@ -72,7 +80,7 @@ Scenarios represent different git repository states. Each scenario is designed t
 
 **Setup:**
 ```bash
-lab test setup --scenario existing-project
+pnpm run dev:cli test setup --scenario existing-project
 ```
 
 ---
@@ -95,7 +103,7 @@ lab test setup --scenario existing-project
 
 **Setup:**
 ```bash
-lab test setup --scenario with-changes
+pnpm run dev:cli test setup --scenario with-changes
 ```
 
 **Default Scenario:** This is the default scenario if none is specified.
@@ -123,7 +131,7 @@ lab test setup --scenario with-changes
 
 **Setup:**
 ```bash
-lab test setup --scenario with-history
+pnpm run dev:cli test setup --scenario with-history
 ```
 
 ---
@@ -147,7 +155,7 @@ lab test setup --scenario with-history
 
 **Setup:**
 ```bash
-lab test setup --scenario with-merge
+pnpm run dev:cli test setup --scenario with-merge
 ```
 
 ---
@@ -170,7 +178,7 @@ lab test setup --scenario with-merge
 
 **Setup:**
 ```bash
-lab test setup --scenario with-conflicts
+pnpm run dev:cli test setup --scenario with-conflicts
 ```
 
 ---
@@ -181,18 +189,20 @@ lab test setup --scenario with-conflicts
 
 Set up test environment with specified scenario.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test setup` or `node dist/index-dev.js test setup`.
+
 **Options:**
 - `-s, --scenario <name>` - Scenario name (default: `with-changes`)
 
 **Examples:**
 ```bash
 # Set up default scenario (with-changes)
-lab test setup
+pnpm run dev:cli test setup
 
 # Set up specific scenario
-lab test setup --scenario existing-project
-lab test setup --scenario with-history
-lab test setup --scenario with-merge
+pnpm run dev:cli test setup --scenario existing-project
+pnpm run dev:cli test setup --scenario with-history
+pnpm run dev:cli test setup --scenario with-merge
 ```
 
 **What it does:**
@@ -208,9 +218,11 @@ lab test setup --scenario with-merge
 
 Open interactive shell in test environment.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test shell` or `node dist/index-dev.js test shell`.
+
 **Examples:**
 ```bash
-lab test shell
+pnpm run dev:cli test shell
 ```
 
 **What it does:**
@@ -219,7 +231,7 @@ lab test shell
 - You can run commands normally (`lab commit`, `lab preview`, etc.)
 - Exit with `exit` or `Ctrl+D`
 
-**Note:** Make sure you've run `lab test setup` first.
+**Note:** Make sure you've run `pnpm run dev:cli test setup` first.
 
 ---
 
@@ -227,9 +239,11 @@ lab test shell
 
 Reset current scenario to initial state.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test reset` or `node dist/index-dev.js test reset`.
+
 **Examples:**
 ```bash
-lab test reset
+pnpm run dev:cli test reset
 ```
 
 **What it does:**
@@ -244,9 +258,11 @@ lab test reset
 
 Remove test environment completely.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test clean` or `node dist/index-dev.js test clean`.
+
 **Examples:**
 ```bash
-lab test clean
+pnpm run dev:cli test clean
 ```
 
 **What it does:**
@@ -260,9 +276,11 @@ lab test clean
 
 Show current test environment status.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test status` or `node dist/index-dev.js test status`.
+
 **Examples:**
 ```bash
-lab test status
+pnpm run dev:cli test status
 ```
 
 **What it shows:**
@@ -278,9 +296,11 @@ lab test status
 
 List all available scenarios.
 
+**Note:** This command is only available in development. Use `pnpm run dev:cli test list-scenarios` or `node dist/index-dev.js test list-scenarios`.
+
 **Examples:**
 ```bash
-lab test list-scenarios
+pnpm run dev:cli test list-scenarios
 ```
 
 **What it shows:**
@@ -296,10 +316,10 @@ lab test list-scenarios
 
 ```bash
 # Set up environment
-lab test setup --scenario with-changes
+pnpm run dev:cli test setup --scenario with-changes
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Test commit
 lab commit
@@ -307,8 +327,8 @@ lab commit
 
 # Exit and reset for another test
 exit
-lab test reset
-lab test shell
+pnpm run dev:cli test reset
+pnpm run dev:cli test shell
 lab commit -t feat -m "quick commit"
 ```
 
@@ -318,10 +338,10 @@ lab commit -t feat -m "quick commit"
 
 ```bash
 # Set up environment with history
-lab test setup --scenario with-history
+pnpm run dev:cli test setup --scenario with-history
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Test preview
 lab preview
@@ -335,10 +355,10 @@ lab preview
 
 ```bash
 # Set up environment
-lab test setup --scenario with-history
+pnpm run dev:cli test setup --scenario with-history
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Test revert
 lab revert
@@ -347,8 +367,8 @@ lab revert
 
 # Test revert with merge commits
 exit
-lab test setup --scenario with-merge
-lab test shell
+pnpm run dev:cli test setup --scenario with-merge
+pnpm run dev:cli test shell
 lab revert
 # [select merge commit]
 # [select parent]
@@ -361,10 +381,10 @@ lab revert
 
 ```bash
 # Set up environment
-lab test setup --scenario existing-project
+pnpm run dev:cli test setup --scenario existing-project
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Test init workflow
 lab init
@@ -382,10 +402,10 @@ lab commit
 
 ```bash
 # Set up environment
-lab test setup --scenario with-changes
+pnpm run dev:cli test setup --scenario with-changes
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Real workflow
 lab commit -t feat -s api -m "add new endpoint"
@@ -405,10 +425,10 @@ lab preview
 
 ```bash
 # Set up environment
-lab test setup --scenario with-conflicts
+pnpm run dev:cli test setup --scenario with-conflicts
 
 # Enter test environment
-lab test shell
+pnpm run dev:cli test shell
 
 # Test abort
 lab revert --abort
@@ -416,8 +436,8 @@ lab revert --abort
 
 # Reset and test continue
 exit
-lab test reset
-lab test shell
+pnpm run dev:cli test reset
+pnpm run dev:cli test shell
 # [manually resolve conflicts]
 lab revert --continue
 # [revert completed]
@@ -433,7 +453,7 @@ lab revert --continue
 
 **Solution:**
 ```bash
-lab test setup
+pnpm run dev:cli test setup
 ```
 
 ---
@@ -445,10 +465,10 @@ lab test setup
 **Solution:**
 ```bash
 # List available scenarios
-lab test list-scenarios
+pnpm run dev:cli test list-scenarios
 
 # Use correct scenario name
-lab test setup --scenario with-changes
+pnpm run dev:cli test setup --scenario with-changes
 ```
 
 ---
@@ -458,14 +478,14 @@ lab test setup --scenario with-changes
 **Problem:** Project needs to be built before testing.
 
 **Solution:**
-The `lab test setup` command automatically builds the project if needed. If you encounter build issues:
+The `pnpm run dev:cli test setup` command automatically builds the project if needed. If you encounter build issues:
 
 ```bash
 # Build manually
 pnpm run build
 
 # Then set up test environment
-lab test setup
+pnpm run dev:cli test setup
 ```
 
 ---
@@ -476,7 +496,7 @@ lab test setup
 
 **Solution:**
 - Sandbox is always at: `.sandbox/test/`
-- Use `lab test shell` to enter it
+- Use `pnpm run dev:cli test shell` to enter it
 - Or navigate manually: `cd .sandbox/test/`
 
 ---
@@ -488,19 +508,20 @@ lab test setup
 **Solution:**
 ```bash
 # Clean and recreate
-lab test clean
-lab test setup --scenario <name>
+pnpm run dev:cli test clean
+pnpm run dev:cli test setup --scenario <name>
 ```
 
 ---
 
 ## Tips
 
-1. **Use `lab test shell`** - Easiest way to test commands in the environment
-2. **Check status** - Use `lab test status` to see current state
-3. **Quick reset** - Use `lab test reset` for fast iteration
+1. **Use `pnpm run dev:cli test shell`** - Easiest way to test commands in the environment
+2. **Check status** - Use `pnpm run dev:cli test status` to see current state
+3. **Quick reset** - Use `pnpm run dev:cli test reset` for fast iteration
 4. **Test workflows** - Chain multiple commands to test real-world usage
 5. **Switch scenarios** - Use different scenarios for different testing needs
+6. **Dev-only access** - Test commands are only available when running from source repository
 
 ---
 

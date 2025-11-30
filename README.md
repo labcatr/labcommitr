@@ -187,25 +187,33 @@ See [`docs/CONFIG_SCHEMA.md`](docs/CONFIG_SCHEMA.md) for complete configuration 
 
 ### Testing Environment
 
+**Note:** Test commands are **development-only** and are not available in the published package. They can only be used when running from the source repository.
+
 For safe testing of Labcommitr commands without affecting your real repository, use the built-in testing environment:
 
 ```bash
 # Set up test environment (default scenario)
-lab test setup
+pnpm run dev:cli test setup
 
 # Open shell in test environment
-lab test shell
+pnpm run dev:cli test shell
 
-# Run commands normally
+# Run commands normally (use regular lab command in shell)
 lab commit
 lab preview
 lab revert
 
 # Reset environment for another test
-lab test reset
+pnpm run dev:cli test reset
 
 # Clean up
-lab test clean
+pnpm run dev:cli test clean
+```
+
+**Alternative:** You can also use `node dist/index-dev.js` instead of `pnpm run dev:cli`:
+```bash
+node dist/index-dev.js test setup
+node dist/index-dev.js test shell
 ```
 
 **Available Scenarios:**
@@ -218,13 +226,13 @@ lab test clean
 **Examples:**
 ```bash
 # Set up specific scenario
-lab test setup --scenario with-history
+pnpm run dev:cli test setup --scenario with-history
 
 # List all scenarios
-lab test list-scenarios
+pnpm run dev:cli test list-scenarios
 
 # Check current status
-lab test status
+pnpm run dev:cli test status
 ```
 
 See [`TESTING.md`](TESTING.md) for complete testing documentation.
