@@ -10,10 +10,7 @@
     "format:ci": "pnpm run format:code",
     "format:code": "prettier -w \"**/*\" --ignore-unknown --cache",
     "version": "changeset version && pnpm install --no-frozen-lockfile && pnpm run format",
-    "test:sandbox": "bash scripts/labcommitr-sandbox.sh",
-    "test:sandbox:bare": "bash scripts/labcommitr-sandbox.sh --no-config",
-    "test:sandbox:reset": "bash scripts/labcommitr-sandbox.sh --reset",
-    "test:sandbox:clean": "bash scripts/labcommitr-sandbox.sh --clean"
+    "dev:cli": "node dist/index-dev.js"
   },
   "type": "module",
   "bin": {
@@ -47,6 +44,20 @@
     "typescript": "^5.9.2",
     "ufo": "^1.6.1"
   },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/cli/program.js",
+    "dist/cli/program.d.ts",
+    "dist/cli/commands/commit",
+    "dist/cli/commands/config",
+    "dist/cli/commands/init",
+    "dist/cli/commands/preview",
+    "dist/cli/commands/revert",
+    "dist/cli/commands/shared",
+    "dist/cli/utils",
+    "dist/lib"
+  ],
   "publishConfig": {
     "access": "public"
   },

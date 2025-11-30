@@ -1,0 +1,32 @@
+# Exclude development-only files from published package
+dist/cli/commands/test/
+dist/cli/program-dev.js
+dist/cli/program-dev.d.ts
+dist/cli/program-dev.js.map
+dist/index-dev.js
+dist/index-dev.d.ts
+dist/index-dev.js.map
+
+# Exclude source files
+src/
+*.ts
+!*.d.ts
+
+# Exclude development files
+.git/
+.sandbox/
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+!TESTING.md
+!.changeset/*.md
+
+# Exclude build artifacts
+*.map
+tsconfig.json
+.prettierrc*
+
+# Exclude test and development scripts
+scripts/
+
