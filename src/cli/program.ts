@@ -57,11 +57,12 @@ program.addHelpText(
   "after",
   `
 Examples:
-  $ labcommitr init              Initialize config in current project
-  $ lab commit                   Create a standardized commit (interactive)
-  $ lab preview                   Browse commit history
-  $ lab revert                    Revert a commit using commit workflow
-  $ lab config show               Display current configuration
+  $ lab init                      Initialize config in current project
+  $ lab commit                    Create a standardized commit (interactive)
+  $ lab i                         (alias for init)
+  $ lab c                         (alias for commit)
+
+Note: You can use either 'lab' or 'labcommitr' to run commands.
 
 Documentation:
   https://github.com/labcatr/labcommitr#readme
