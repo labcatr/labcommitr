@@ -20,6 +20,7 @@ import type {
 import { ConfigError } from "./types.js";
 import { mergeWithDefaults, createFallbackConfig } from "./defaults.js";
 import { ConfigValidator } from "./validator.js";
+import { detectEmojiSupport } from "../util/emoji.js";
 
 /**
  * Configuration file names to search for (in priority order)
@@ -231,7 +232,7 @@ export class ConfigLoader {
       config: fallbackConfig,
       source: "defaults",
       loadedAt: Date.now(),
-      emojiModeActive: this.detectEmojiSupport(), // TODO: Implement emoji detection
+      emojiModeActive: this.detectEmojiSupport(fallbackConfig),
     };
   }
 
@@ -309,7 +310,7 @@ export class ConfigLoader {
       source: "project",
       path: configPath,
       loadedAt: Date.now(),
-      emojiModeActive: this.detectEmojiSupport(), // TODO: Implement emoji detection
+      emojiModeActive: this.detectEmojiSupport(processedConfig),
     };
   }
 
@@ -346,14 +347,20 @@ export class ConfigLoader {
   /**
    * Detects whether the current terminal supports emoji display
    *
-   * TODO: Implement proper emoji detection logic
-   * For now, returns true as a placeholder
+   * Combines user preference (force_emoji_detection) with terminal capability detection.
+   * User preference takes precedence over automatic detection.
    *
-   * @returns Whether emojis should be displayed
+   * @param config - The loaded configuration (may contain force_emoji_detection override)
+   * @returns Whether emojis should be displayed in the terminal
    */
-  private detectEmojiSupport(): boolean {
-    // Placeholder implementation - will be enhanced later
-    return true;
+  private detectEmojiSupport(config?: LabcommitrConfig): boolean {
+    // User override takes highest priority
+    if (config?.config.force_emoji_detection !== null && config?.config.force_emoji_detection !== undefined) {
+      return config.config.force_emoji_detection;
+    }
+
+    // Automatic terminal detection
+    return detectEmojiSupport();
   }
 
   /**
