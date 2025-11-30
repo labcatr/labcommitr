@@ -1076,6 +1076,7 @@ export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
   config?: LabcommitrConfig,
+  emojiModeActive: boolean = true,
 ): Promise<
   | "commit"
   | "edit-type"
@@ -1084,6 +1085,13 @@ export async function displayPreview(
   | "edit-body"
   | "cancel"
 > {
+  // Import emoji utilities
+  const { formatForDisplay } = await import("../../../lib/util/emoji.js");
+
+  // Strip emojis for display if terminal doesn't support them
+  const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
+  const displayBody = body ? formatForDisplay(body, emojiModeActive) : undefined;
+
   // Start connector line using @clack/prompts
   log.info(
     `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
@@ -1092,11 +1100,11 @@ export async function displayPreview(
   // Render content with connector lines
   // Empty line after header
   console.log(renderWithConnector(""));
-  console.log(renderWithConnector(textColors.brightCyan(formattedMessage)));
+  console.log(renderWithConnector(textColors.brightCyan(displayMessage)));
 
-  if (body) {
+  if (displayBody) {
     console.log(renderWithConnector(""));
-    const bodyLines = body.split("\n");
+    const bodyLines = displayBody.split("\n");
     for (const line of bodyLines) {
       console.log(renderWithConnector(textColors.white(line)));
     }
