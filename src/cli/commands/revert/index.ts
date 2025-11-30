@@ -7,7 +7,10 @@
 import { Command } from "commander";
 import { Logger } from "../../../lib/logger.js";
 import { loadConfig } from "../../../lib/config/index.js";
-import { detectEmojiSupport, formatForDisplay } from "../../../lib/util/emoji.js";
+import {
+  detectEmojiSupport,
+  formatForDisplay,
+} from "../../../lib/util/emoji.js";
 import {
   isGitRepository,
   getCurrentBranch,
@@ -243,7 +246,12 @@ export async function revertCommit(
           subject,
         );
 
-        action = await displayPreview(formattedMessage, body, config, emojiModeActive);
+        action = await displayPreview(
+          formattedMessage,
+          body,
+          config,
+          emojiModeActive,
+        );
 
         if (action === "edit-type") {
           const typeResult = await promptType(config, undefined, type);
@@ -307,7 +315,10 @@ export async function revertCommit(
           hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
 
         console.log(`${success("✓")} Revert commit created successfully!`);
-        const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
         console.log(`  ${revertHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Check if it's a conflict

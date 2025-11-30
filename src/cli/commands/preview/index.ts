@@ -109,7 +109,12 @@ async function previewAction(options: {
 
       if (viewingDetails && currentDetailCommit) {
         // Detail view
-        displayCommitDetails(currentDetailCommit, showBody, showFiles, emojiModeActive);
+        displayCommitDetails(
+          currentDetailCommit,
+          showBody,
+          showFiles,
+          emojiModeActive,
+        );
         console.log(
           `  ${textColors.white("Press")} ${textColors.brightYellow("b")} ${textColors.white("to toggle body,")} ${textColors.brightYellow("f")} ${textColors.white("to toggle files,")} ${textColors.brightYellow("d")} ${textColors.white("for diff,")} ${textColors.brightYellow("r")} ${textColors.white("to revert,")} ${textColors.brightYellow("←")} ${textColors.white("to go back")}`,
         );

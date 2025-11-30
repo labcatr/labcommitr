@@ -355,7 +355,10 @@ export async function commitAction(options: {
         );
 
         console.log(`${success("✓")} Commit created successfully!`);
-        const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
         console.log(`  ${commitHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Cleanup on failure
@@ -444,7 +447,12 @@ export async function commitAction(options: {
         );
 
         // Show preview and get user action
-        action = await displayPreview(formattedMessage, body, config, emojiModeActive);
+        action = await displayPreview(
+          formattedMessage,
+          body,
+          config,
+          emojiModeActive,
+        );
 
         // Handle edit actions
         if (action === "edit-type") {
@@ -511,7 +519,10 @@ export async function commitAction(options: {
         );
 
         console.log(`${success("✓")} Commit created successfully!`);
-        const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
         console.log(`  ${commitHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Cleanup on failure
