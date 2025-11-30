@@ -1,7 +1,7 @@
 /**
  * Configuration validation system for labcommitr
  *
- * Implements incremental validation following the CONFIG_SCHEMA.md specification.
+ * Implements incremental validation following the docs/CONFIG_SCHEMA.md specification.
  * Phase 1: Basic schema validation (required fields, types, structure)
  * Phase 2: Business logic validation (uniqueness, cross-references)
  * Phase 3: Advanced validation (templates, industry standards)

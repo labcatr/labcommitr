@@ -36,9 +36,13 @@ coverage/
 *.lcov
 
 # Testing
-# Sandbox directory for testing Labcommitr commands (scripts in scripts/ are tracked)
+# Sandbox directory for testing Labcommitr commands
 .sandbox/
 test-results/
+
+# Documentation
+# Architecture and development documentation (not tracked)
+docs/
 
 # npm/yarn/pnpm
 npm-debug.log*
@@ -75,10 +79,11 @@ Thumbs.db
 rust-src/
 
 ### Documentation
-# Ignore all .md files except README.md, CHANGELOG.md, and .changeset/*.md (local reference only)
+# Ignore all .md files except README.md, CHANGELOG.md, TESTING.md, and .changeset/*.md
 *.md
 !README.md
 !CHANGELOG.md
+!TESTING.md
 !.changeset/*.md
 
 ### Labcommitr Configuration

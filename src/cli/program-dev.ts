@@ -1,11 +1,11 @@
 /**
- * Commander.js program configuration
+ * Commander.js program configuration (Development)
  *
- * This module sets up the CLI program structure including:
- * - Program metadata (name, version, description)
- * - Global options (--verbose, --silent, etc.)
- * - Command registration
- * - Help text customization
+ * This module sets up the CLI program structure for development use,
+ * including test commands that are not available in production builds.
+ *
+ * This file is only used during development and is not included in
+ * the published package.
  */
 
 import { Command } from "commander";
@@ -19,7 +19,7 @@ import { initCommand } from "./commands/init/index.js";
 import { commitCommand } from "./commands/commit.js";
 import { previewCommand } from "./commands/preview/index.js";
 import { revertCommand } from "./commands/revert/index.js";
-// Note: testCommand is only available in dev entrypoint (program-dev.ts)
+import { testCommand } from "./commands/test/index.js";
 
 // Get package.json for version info
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +28,7 @@ const packageJsonPath = join(__dirname, "../../package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
 /**
- * Main CLI program instance
+ * Development CLI program instance (includes test commands)
  */
 export const program = new Command();
 
@@ -44,13 +44,13 @@ program
 // Global options (future: --verbose, --no-emoji, etc.)
 // program.option('--verbose', 'Enable verbose logging');
 
-// Register commands
+// Register commands (including test command for development)
 program.addCommand(configCommand);
 program.addCommand(initCommand);
 program.addCommand(commitCommand);
 program.addCommand(previewCommand);
 program.addCommand(revertCommand);
-// Note: testCommand is only registered in dev entrypoint (program-dev.ts)
+program.addCommand(testCommand);
 
 // Customize help text
 program.addHelpText(
@@ -61,6 +61,8 @@ Examples:
   $ lab commit                    Create a standardized commit (interactive)
   $ lab i                         (alias for init)
   $ lab c                         (alias for commit)
+  $ lab test setup               Set up test environment
+  $ lab test shell               Open shell in test environment
 
 Note: You can use either 'lab' or 'labcommitr' to run commands.
 
@@ -71,3 +73,4 @@ Documentation:
 
 // Error on unknown commands
 program.showSuggestionAfterError(true);
+

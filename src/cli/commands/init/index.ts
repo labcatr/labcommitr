@@ -62,6 +62,7 @@ function configExists(projectRoot: string): boolean {
  */
 export const initCommand = new Command("init")
   .description("Initialize labcommitr configuration in your project")
+  .alias("i")
   .option("-f, --force", "Overwrite existing configuration")
   .option(
     "--preset <type>",
@@ -78,10 +79,7 @@ async function initAction(options: {
   preset?: string;
 }): Promise<void> {
   try {
-    // Intro: Clef introduces herself
-    await clef.intro();
-    // Screen is now completely clear
-
+    // Early validation: Check prerequisites before any UI
     // Detect project root
     const projectRoot = await detectProjectRoot();
     if (!projectRoot) {
@@ -89,12 +87,16 @@ async function initAction(options: {
       process.exit(1);
     }
 
-    // Check for existing config
+    // Check for existing config (must happen before any UI/animation)
     if (configExists(projectRoot) && !options.force) {
       Logger.error("Configuration already exists. Use --force to overwrite.");
       Logger.info(`File: ${path.join(projectRoot, ".labcommitr.config.yaml")}`);
       process.exit(1);
     }
+
+    // Intro: Clef introduces herself (only if we're proceeding)
+    await clef.intro();
+    // Screen is now completely clear
 
     // Prompts: Clean labels, no cat
     // Note: @clack/prompts clears each prompt after selection (their default behavior)
