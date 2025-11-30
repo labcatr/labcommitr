@@ -1085,12 +1085,11 @@ export async function displayPreview(
   | "edit-body"
   | "cancel"
 > {
-  // Import emoji utilities
-  const { formatForDisplay } = await import("../../../lib/util/emoji.js");
-
-  // Strip emojis for display if terminal doesn't support them
-  const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
-  const displayBody = body ? formatForDisplay(body, emojiModeActive) : undefined;
+  // Preview shows the actual commit message as it will be stored in Git
+  // We don't strip emojis here because the user needs to see what will be committed
+  // even if their terminal doesn't support emoji display
+  const displayMessage = formattedMessage;
+  const displayBody = body;
 
   // Start connector line using @clack/prompts
   log.info(
