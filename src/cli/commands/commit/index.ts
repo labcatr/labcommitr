@@ -14,6 +14,7 @@
 import { loadConfig, ConfigError } from "../../../lib/config/index.js";
 import type { LabcommitrConfig } from "../../../lib/config/types.js";
 import { Logger } from "../../../lib/logger.js";
+import { formatForDisplay } from "../../../lib/util/emoji.js";
 import { isGitRepository } from "./git.js";
 import {
   stageAllTrackedFiles,
@@ -193,6 +194,7 @@ export async function commitAction(options: {
     }
 
     const config = configResult.config;
+    const emojiModeActive = configResult.emojiModeActive;
 
     // Step 2: Verify git repository
     if (!isGitRepository()) {
@@ -353,7 +355,11 @@ export async function commitAction(options: {
         );
 
         console.log(`${success("✓")} Commit created successfully!`);
-        console.log(`  ${commitHash} ${formattedMessage}`);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
+        console.log(`  ${commitHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Cleanup on failure
         await cleanup({
@@ -441,7 +447,12 @@ export async function commitAction(options: {
         );
 
         // Show preview and get user action
-        action = await displayPreview(formattedMessage, body, config);
+        action = await displayPreview(
+          formattedMessage,
+          body,
+          config,
+          emojiModeActive,
+        );
 
         // Handle edit actions
         if (action === "edit-type") {
@@ -508,7 +519,11 @@ export async function commitAction(options: {
         );
 
         console.log(`${success("✓")} Commit created successfully!`);
-        console.log(`  ${commitHash} ${formattedMessage}`);
+        const displayMessage = formatForDisplay(
+          formattedMessage,
+          emojiModeActive,
+        );
+        console.log(`  ${commitHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Cleanup on failure
         await cleanup({

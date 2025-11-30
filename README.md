@@ -316,8 +316,8 @@ See [`docs/CONFIG_SCHEMA.md`](docs/CONFIG_SCHEMA.md) for complete configuration 
 **Configuration discovery:**
 
 - Searches from current directory up to project root
-- Falls back to global configuration if available
 - Uses sensible defaults if no configuration found
+- Global configuration support is planned for future releases (see [Planned Features](#planned-features))
 
 ---
 
@@ -404,10 +404,6 @@ Before implementing any changes, please follow this process:
    - Follow the project's development guidelines
    - Ensure your commits follow the project's commit message format (you can set up using `lab init`)
 
-### Development Guidelines
-
-For detailed development guidelines, coding standards, and architecture information, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
-
 ### Questions?
 
 If you have questions or need clarification, feel free to open a discussion or issue.
@@ -416,4 +412,27 @@ If you have questions or need clarification, feel free to open a discussion or i
 
 ## Planned Features
 
-_No planned features at this time. Check back later or open an issue to suggest new features!_
+### Global Configuration
+
+Support for user-level global configuration files to enable consistent commit conventions across multiple projects. This will allow you to:
+
+- Set default commit types and preferences in a single location
+- Apply your preferred commit conventions to all projects automatically
+- Override global settings on a per-project basis when needed
+
+**Use cases:**
+
+- Developers working across multiple repositories who want consistent commit message formats
+- Teams that want to standardize commit conventions organization-wide
+- Personal projects where you want the same commit types everywhere
+
+The global configuration will be stored in OS-specific locations:
+
+- **macOS/Linux**: `~/.labcommitr.config.yaml` or XDG config directory
+- **Windows**: `%USERPROFILE%\.labcommitr.config.yaml` or AppData directory
+
+Project-specific configurations will always take precedence over global settings.
+
+---
+
+_Have a feature idea? Open an issue to suggest new features!_

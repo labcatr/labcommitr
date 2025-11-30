@@ -6,6 +6,7 @@
 
 import { select, isCancel } from "@clack/prompts";
 import { labelColors, textColors } from "../init/colors.js";
+import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo } from "../shared/types.js";
 import { getCommitDetails, getCommitDiff } from "../shared/git-operations.js";
 import readline from "readline";
@@ -46,6 +47,7 @@ export function displayCommitList(
   hasMore: boolean,
   hasPreviousPage: boolean = false,
   hasMorePages: boolean = false,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -64,10 +66,11 @@ export function displayCommitList(
     const commit = commits[i];
     const number = i.toString();
     const mergeIndicator = commit.isMerge ? " [Merge]" : "";
+    const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
     const truncatedSubject =
-      commit.subject.length > 50
-        ? commit.subject.substring(0, 47) + "..."
-        : commit.subject;
+      displaySubject.length > 50
+        ? displaySubject.substring(0, 47) + "..."
+        : displaySubject;
 
     console.log(
       `  ${textColors.brightCyan(`[${number}]`)} ${textColors.brightWhite(commit.shortHash)} ${truncatedSubject}${mergeIndicator}`,
@@ -124,6 +127,7 @@ export function displayCommitDetails(
   commit: CommitInfo,
   showBody: boolean = true,
   showFiles: boolean = true,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -131,7 +135,8 @@ export function displayCommitDetails(
   );
   console.log();
   console.log(`  ${textColors.brightWhite("Hash:")} ${commit.hash}`);
-  console.log(`  ${textColors.brightWhite("Subject:")} ${commit.subject}`);
+  const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
+  console.log(`  ${textColors.brightWhite("Subject:")} ${displaySubject}`);
   console.log();
   console.log(
     `  ${textColors.brightWhite("Author:")} ${commit.author.name} <${commit.author.email}>`,
@@ -174,7 +179,8 @@ export function displayCommitDetails(
   if (showBody) {
     if (commit.body) {
       console.log(`  ${textColors.brightWhite("Body:")}`);
-      const bodyLines = commit.body.split("\n");
+      const displayBody = formatForDisplay(commit.body, emojiModeActive);
+      const bodyLines = displayBody.split("\n");
       bodyLines.forEach((line) => {
         console.log(`    ${line}`);
       });

@@ -20,6 +20,7 @@ import type {
 import { ConfigError } from "./types.js";
 import { mergeWithDefaults, createFallbackConfig } from "./defaults.js";
 import { ConfigValidator } from "./validator.js";
+import { detectEmojiSupport } from "../util/emoji.js";
 
 /**
  * Configuration file names to search for (in priority order)
@@ -231,7 +232,7 @@ export class ConfigLoader {
       config: fallbackConfig,
       source: "defaults",
       loadedAt: Date.now(),
-      emojiModeActive: this.detectEmojiSupport(), // TODO: Implement emoji detection
+      emojiModeActive: this.detectEmojiSupport(fallbackConfig),
     };
   }
 
@@ -309,7 +310,7 @@ export class ConfigLoader {
       source: "project",
       path: configPath,
       loadedAt: Date.now(),
-      emojiModeActive: this.detectEmojiSupport(), // TODO: Implement emoji detection
+      emojiModeActive: this.detectEmojiSupport(processedConfig),
     };
   }
 
@@ -346,14 +347,23 @@ export class ConfigLoader {
   /**
    * Detects whether the current terminal supports emoji display
    *
-   * TODO: Implement proper emoji detection logic
-   * For now, returns true as a placeholder
+   * Combines user preference (force_emoji_detection) with terminal capability detection.
+   * User preference takes precedence over automatic detection.
    *
-   * @returns Whether emojis should be displayed
+   * @param config - The loaded configuration (may contain force_emoji_detection override)
+   * @returns Whether emojis should be displayed in the terminal
    */
-  private detectEmojiSupport(): boolean {
-    // Placeholder implementation - will be enhanced later
-    return true;
+  private detectEmojiSupport(config?: LabcommitrConfig): boolean {
+    // User override takes highest priority
+    if (
+      config?.config.force_emoji_detection !== null &&
+      config?.config.force_emoji_detection !== undefined
+    ) {
+      return config.config.force_emoji_detection;
+    }
+
+    // Automatic terminal detection
+    return detectEmojiSupport();
   }
 
   /**
@@ -444,7 +454,7 @@ export class ConfigLoader {
     } catch (error: any) {
       if (error.code === "ENOENT") {
         // File not found - this is handled upstream, but provide clear error if called directly
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Configuration file not found: ${filePath}`,
           "The file does not exist",
           ["Run 'lab init' to create a configuration file"],
@@ -452,7 +462,7 @@ export class ConfigLoader {
         );
       } else if (error.code === "EACCES") {
         // Permission denied - provide actionable solutions
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Cannot read configuration file: ${filePath}`,
           "Permission denied - insufficient file permissions",
           [
@@ -464,7 +474,7 @@ export class ConfigLoader {
         );
       } else if (error.code === "ENOTDIR") {
         // Path component is not a directory
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Invalid path to configuration file: ${filePath}`,
           "A component in the path is not a directory",
           [
@@ -476,7 +486,7 @@ export class ConfigLoader {
       }
 
       // Re-throw unexpected errors with additional context
-      throw new (Error as any)( // TODO: Use proper ConfigError import
+      throw new ConfigError(
         `Failed to access configuration file: ${filePath}`,
         `System error: ${error.message}`,
         [
@@ -507,7 +517,7 @@ export class ConfigLoader {
 
       // Check for empty file (common user error)
       if (!fileContent.trim()) {
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Configuration file is empty: ${filePath}`,
           "The file contains no content or only whitespace",
           [
@@ -529,7 +539,7 @@ export class ConfigLoader {
       // Validate that result is an object (not null, string, array, etc.)
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         const actualType = Array.isArray(parsed) ? "array" : typeof parsed;
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Invalid configuration structure in ${filePath}`,
           `Configuration must be a YAML object, but got ${actualType}`,
           [
@@ -544,7 +554,7 @@ export class ConfigLoader {
       // Basic structure validation - ensure required 'types' field exists
       const config = parsed as any;
       if (!Array.isArray(config.types)) {
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Missing required 'types' field in ${filePath}`,
           "Configuration must include a 'types' array defining commit types",
           [
@@ -565,7 +575,7 @@ export class ConfigLoader {
         // Extract line and column information if available
         if (mark) {
           const lineInfo = `line ${mark.line + 1}, column ${mark.column + 1}`;
-          throw new (Error as any)( // TODO: Use proper ConfigError import
+          throw new ConfigError(
             `Invalid YAML syntax in ${filePath} at ${lineInfo}`,
             `Parsing error: ${message}`,
             [
@@ -578,7 +588,7 @@ export class ConfigLoader {
           );
         } else {
           // YAML error without specific location
-          throw new (Error as any)( // TODO: Use proper ConfigError import
+          throw new ConfigError(
             `Invalid YAML syntax in ${filePath}`,
             `Parsing error: ${message}`,
             [
@@ -599,7 +609,7 @@ export class ConfigLoader {
 
       // Handle file system errors that might occur during reading
       if (error.code === "EISDIR") {
-        throw new (Error as any)( // TODO: Use proper ConfigError import
+        throw new ConfigError(
           `Cannot read configuration: ${filePath} is a directory`,
           "Expected a file but found a directory",
           [
@@ -611,7 +621,7 @@ export class ConfigLoader {
       }
 
       // Generic error fallback with context
-      throw new (Error as any)( // TODO: Use proper ConfigError import
+      throw new ConfigError(
         `Failed to parse configuration file: ${filePath}`,
         `Unexpected error: ${error.message}`,
         [
@@ -643,7 +653,7 @@ export class ConfigLoader {
 
     // Handle common file system errors with specific guidance
     if (error.code === "ENOENT") {
-      return new (Error as any)( // TODO: Use proper ConfigError import
+      return new ConfigError(
         `No configuration found starting from ${context}`,
         "Could not locate a labcommitr configuration file in the project",
         [
@@ -655,7 +665,7 @@ export class ConfigLoader {
     }
 
     if (error.code === "EACCES") {
-      return new (Error as any)( // TODO: Use proper ConfigError import
+      return new ConfigError(
         `Permission denied while searching for configuration`,
         `Cannot access directory or file: ${error.path || context}`,
         [
@@ -667,7 +677,7 @@ export class ConfigLoader {
     }
 
     if (error.code === "ENOTDIR") {
-      return new (Error as any)( // TODO: Use proper ConfigError import
+      return new ConfigError(
         `Invalid directory structure encountered`,
         `Expected directory but found file: ${error.path || context}`,
         [
@@ -679,7 +689,7 @@ export class ConfigLoader {
 
     // Handle YAML-related errors (these should typically be caught upstream)
     if (error instanceof yaml.YAMLException) {
-      return new (Error as any)( // TODO: Use proper ConfigError import
+      return new ConfigError(
         `Configuration file contains invalid YAML syntax`,
         `YAML parsing error: ${error.message}`,
         [
@@ -692,7 +702,7 @@ export class ConfigLoader {
 
     // Handle timeout errors (e.g., from slow file systems)
     if (error.code === "ETIMEDOUT") {
-      return new (Error as any)( // TODO: Use proper ConfigError import
+      return new ConfigError(
         `Timeout while accessing configuration files`,
         "File system operation took too long to complete",
         [
@@ -709,7 +719,7 @@ export class ConfigLoader {
       ? `\n\nTechnical details:\n${error.stack}`
       : "";
 
-    return new (Error as any)( // TODO: Use proper ConfigError import
+    return new ConfigError(
       `Configuration loading failed`,
       `${errorMessage}${errorContext}`,
       [
