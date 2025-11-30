@@ -7,6 +7,7 @@
 import { Command } from "commander";
 import { Logger } from "../../../lib/logger.js";
 import { loadConfig } from "../../../lib/config/index.js";
+import { detectEmojiSupport, formatForDisplay } from "../../../lib/util/emoji.js";
 import {
   isGitRepository,
   getCurrentBranch,
@@ -133,6 +134,7 @@ export async function revertCommit(
     }
 
     const config = configResult.config;
+    const emojiModeActive = configResult.emojiModeActive;
 
     // Get commit details
     const commit = getCommitDetails(commitHash);
@@ -151,7 +153,7 @@ export async function revertCommit(
 
     // Show confirmation
     clearTerminal();
-    displayRevertConfirmation(commit);
+    displayRevertConfirmation(commit, emojiModeActive);
 
     let useWorkflow = !options?.noEdit;
     if (useWorkflow) {
@@ -241,7 +243,7 @@ export async function revertCommit(
           subject,
         );
 
-        action = await displayPreview(formattedMessage, body, config);
+        action = await displayPreview(formattedMessage, body, config, emojiModeActive);
 
         if (action === "edit-type") {
           const typeResult = await promptType(config, undefined, type);
@@ -305,7 +307,8 @@ export async function revertCommit(
           hashResult.stdout?.toString().trim().substring(0, 7) || "unknown";
 
         console.log(`${success("✓")} Revert commit created successfully!`);
-        console.log(`  ${revertHash} ${formattedMessage}`);
+        const displayMessage = formatForDisplay(formattedMessage, emojiModeActive);
+        console.log(`  ${revertHash} ${displayMessage}`);
       } catch (error: unknown) {
         // Check if it's a conflict
         if (error instanceof Error && error.message.includes("conflict")) {
@@ -393,6 +396,9 @@ async function revertAction(options: {
       console.error("\n  Initialize git first: git init\n");
       process.exit(1);
     }
+
+    // Detect emoji support for display (always detect, even if no config)
+    const emojiModeActive = detectEmojiSupport();
 
     // Check for config if --no-edit is not used (config needed for commit workflow)
     if (!options.noEdit) {
@@ -483,6 +489,7 @@ async function revertAction(options: {
         hasMore,
         hasPreviousPage,
         hasMorePages,
+        emojiModeActive,
       );
 
       // Build navigation hints

@@ -6,6 +6,7 @@
 
 import { select, confirm, isCancel } from "@clack/prompts";
 import { labelColors, textColors, success, attention } from "../init/colors.js";
+import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo, MergeParent } from "../shared/types.js";
 
 /**
@@ -54,6 +55,7 @@ export function displayRevertCommitList(
   hasMore: boolean,
   hasPreviousPage: boolean = false,
   hasMorePages: boolean = false,
+  emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
@@ -71,10 +73,11 @@ export function displayRevertCommitList(
     const commit = commits[i];
     const number = i.toString();
     const mergeIndicator = commit.isMerge ? " [Merge]" : "";
+    const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
     const truncatedSubject =
-      commit.subject.length > 50
-        ? commit.subject.substring(0, 47) + "..."
-        : commit.subject;
+      displaySubject.length > 50
+        ? displaySubject.substring(0, 47) + "..."
+        : displaySubject;
 
     console.log(
       `  ${textColors.brightCyan(`[${number}]`)} ${textColors.brightWhite(commit.shortHash)} ${truncatedSubject}${mergeIndicator}`,
@@ -124,7 +127,10 @@ export async function promptMergeParent(
 /**
  * Display revert confirmation
  */
-export function displayRevertConfirmation(commit: CommitInfo): void {
+export function displayRevertConfirmation(
+  commit: CommitInfo,
+  emojiModeActive: boolean = true,
+): void {
   console.log();
   console.log(
     `${label("confirm", "green")}  ${textColors.pureWhite("Revert Confirmation")}`,
@@ -133,7 +139,8 @@ export function displayRevertConfirmation(commit: CommitInfo): void {
   console.log(
     `  ${textColors.brightWhite("Reverting commit:")} ${commit.shortHash}`,
   );
-  console.log(`  ${textColors.brightWhite("Original:")} ${commit.subject}`);
+  const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
+  console.log(`  ${textColors.brightWhite("Original:")} ${displaySubject}`);
   console.log();
   console.log(
     `  ${attention("This will create a new commit that undoes these changes.")}`,
