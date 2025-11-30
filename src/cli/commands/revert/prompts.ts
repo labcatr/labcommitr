@@ -141,6 +141,7 @@ export function displayRevertConfirmation(
   );
   const displaySubject = formatForDisplay(commit.subject, emojiModeActive);
   console.log(`  ${textColors.brightWhite("Original:")} ${displaySubject}`);
+  console.log(`  ${textColors.brightWhite("Original:")} ${commit.subject}`);
   console.log();
   console.log(
     `  ${attention("This will create a new commit that undoes these changes.")}`,
