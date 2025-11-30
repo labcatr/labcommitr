@@ -80,24 +80,14 @@ export function displayCommitList(
   // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
-  const paginationHints: string[] = [];
-  if (hasPreviousPage) {
-    paginationHints.push(`${textColors.brightYellow("p")} for previous batch`);
-  }
-  if (hasMorePages) {
-    paginationHints.push(`${textColors.brightYellow("n")} for next batch`);
-  }
-  const paginationText = paginationHints.length > 0 
-    ? ` (press ${paginationHints.join(", ")})`
-    : "";
   
   if (hasMore) {
     console.log(
-      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+${paginationText}`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}+`,
     );
   } else {
     console.log(
-      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}${paginationText}`,
+      `  Showing commits ${startIndex + 1}-${endIndex} of ${totalFetched}`,
     );
   }
   console.log();
