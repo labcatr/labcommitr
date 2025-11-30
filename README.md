@@ -12,6 +12,8 @@ A CLI tool for creating standardized Git commits with customizable workflows and
   - [commit](#commit)
   - [init](#init)
   - [config](#config)
+  - [preview](#preview)
+  - [revert](#revert)
 - [Configuration](#configuration)
 - [Development & Testing](#development--testing)
 - [Contributing](#contributing)
@@ -166,6 +168,114 @@ lab config show --path /path/to/project
 
 ---
 
+### preview
+
+Browse and inspect commit history interactively without modifying your repository.
+
+**Usage:**
+```bash
+lab preview [options]
+```
+
+**Options:**
+- `-l, --limit <number>` - Maximum commits to fetch (default: 50, max: 100)
+- `-b, --branch <branch>` - Branch to preview (default: current branch)
+
+**Examples:**
+```bash
+# Browse commits on current branch
+lab preview
+
+# Preview commits from a specific branch
+lab preview --branch main
+
+# Limit the number of commits fetched
+lab preview --limit 25
+```
+
+**Interactive Features:**
+- **Commit List View:**
+  - Navigate through commits with pagination (10 per page)
+  - Press `0-9` to view details of a specific commit
+  - Press `n` to load next batch (if available)
+  - Press `p` to go to previous batch (if available)
+  - Press `Esc` to exit
+
+- **Commit Detail View:**
+  - View full commit information (hash, author, date, subject, body, files)
+  - Press `b` to toggle body visibility
+  - Press `f` to toggle changed files visibility
+  - Press `d` to view diff
+  - Press `r` to revert this commit (switches to revert command)
+  - Press `←` or `Esc` to go back to list
+  - Press `?` for help
+
+**Notes:**
+- Read-only operation - does not modify your repository
+- Fetches commits in batches of 50 (up to 100 total)
+- Works on current branch by default
+- No configuration file required (read-only operation)
+
+---
+
+### revert
+
+Revert a commit using the project's commit workflow. Select a commit interactively and create a revert commit following your project's commit message format.
+
+**Usage:**
+```bash
+lab revert [options]
+```
+
+**Options:**
+- `-l, --limit <number>` - Maximum commits to fetch (default: 50, max: 100)
+- `-b, --branch <branch>` - Branch to revert from (default: current branch)
+- `--no-edit` - Skip commit message editing (use Git's default revert message)
+- `--continue` - Continue revert after conflict resolution
+- `--abort` - Abort revert in progress
+
+**Examples:**
+```bash
+# Interactive revert (uses commit workflow)
+lab revert
+
+# Revert from specific branch
+lab revert --branch main
+
+# Revert without using commit workflow
+lab revert --no-edit
+
+# Continue after resolving conflicts
+lab revert --continue
+
+# Abort a revert in progress
+lab revert --abort
+```
+
+**Interactive Features:**
+- **Commit Selection:**
+  - Browse commits with pagination (10 per page)
+  - Press `0-9` to select a commit to revert
+  - Press `n` to load next batch (if available)
+  - Press `p` to go to previous batch (if available)
+  - Press `Esc` to cancel
+
+- **Revert Workflow:**
+  - Shows commit details before reverting
+  - For merge commits, prompts to select parent
+  - Uses your project's commit workflow to create revert commit message
+  - Allows editing commit message before finalizing
+  - Handles conflicts with `--continue` and `--abort` options
+
+**Notes:**
+- Requires `.labcommitr.config.yaml` (unless using `--no-edit`)
+- Creates a new commit that undoes the selected commit
+- For merge commits, you'll be prompted to select which parent to revert to
+- If conflicts occur, resolve them manually and use `--continue`
+- Use `--abort` to cancel a revert in progress
+
+---
+
 ## Configuration
 
 Labcommitr uses a `.labcommitr.config.yaml` file in your project root. The configuration file supports:
@@ -242,14 +352,38 @@ See [`TESTING.md`](TESTING.md) for complete testing documentation.
 
 ## Contributing
 
-Contributions are welcome! Please ensure your commits follow the project's commit message format (which you can set up using `lab init`).
+Contributions are welcome! We appreciate your interest in improving Labcommitr.
 
-For development guidelines, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
+### How to Contribute
+
+Before implementing any changes, please follow this process:
+
+1. **Open an issue** describing your proposed change
+   - Clearly explain what you want to add or modify
+   - Provide **use cases** that demonstrate the value of your change
+   - Include **justification** for why this change would benefit users
+   - Discuss potential implementation approaches if relevant
+
+2. **Wait for review and discussion**
+   - Maintainers will review your proposal
+   - Community feedback is encouraged
+   - We'll discuss whether the change aligns with project goals
+
+3. **Proceed with implementation** (if approved)
+   - Once the proposal is accepted, you can start implementing
+   - Follow the project's development guidelines
+   - Ensure your commits follow the project's commit message format (you can set up using `lab init`)
+
+### Development Guidelines
+
+For detailed development guidelines, coding standards, and architecture information, see [`docs/DEVELOPMENT_GUIDELINES.md`](docs/DEVELOPMENT_GUIDELINES.md).
+
+### Questions?
+
+If you have questions or need clarification, feel free to open a discussion or issue.
 
 ---
 
 ## Planned Features
 
-The following commands are planned but not yet implemented:
-
-- `lab go <type> [...message]` - Quickly submit a commit of the specified type with a message. If a message is not specified, a generic one will be generated (fast but not recommended for production use).
+_No planned features at this time. Check back later or open an issue to suggest new features!_
