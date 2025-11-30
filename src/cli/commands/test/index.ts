@@ -85,7 +85,7 @@ async function setupAction(options: { scenario?: string }): Promise<void> {
     console.log(`  ${textColors.brightWhite("Scenario:")} ${scenarioName}`);
     console.log();
     console.log(
-      `  ${textColors.white("Run commands with:")} ${textColors.brightCyan("lab test shell")}`,
+      `  ${textColors.white("Run commands with:")} ${textColors.brightCyan("pnpm run dev:cli test shell")}`,
     );
     console.log();
   } catch (error: unknown) {
@@ -107,7 +107,7 @@ async function resetAction(): Promise<void> {
 
     if (!state || !state.scenario) {
       Logger.error("No active test environment found");
-      console.error("\n  Run 'lab test setup' first.\n");
+      console.error("\n  Run 'pnpm run dev:cli test setup' first.\n");
       process.exit(1);
     }
 
@@ -163,7 +163,7 @@ async function statusAction(): Promise<void> {
   if (!state || !isSandboxValid(sandboxPath)) {
     console.log("  No active test environment.");
     console.log();
-    console.log(`  Run ${textColors.brightCyan("lab test setup")} to create one.`);
+    console.log(`  Run ${textColors.brightCyan("pnpm run dev:cli test setup")} to create one.`);
     console.log();
     return;
   }
@@ -221,7 +221,7 @@ function shellAction(): void {
 
   if (!isSandboxValid(sandboxPath)) {
     Logger.error("No active test environment found");
-    console.error("\n  Run 'lab test setup' first.\n");
+    console.error("\n  Run 'pnpm run dev:cli test setup' first.\n");
     process.exit(1);
   }
 
