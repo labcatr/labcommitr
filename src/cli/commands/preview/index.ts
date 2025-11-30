@@ -6,6 +6,7 @@
 
 import { Command } from "commander";
 import { Logger } from "../../../lib/logger.js";
+import { detectEmojiSupport } from "../../../lib/util/emoji.js";
 import {
   isGitRepository,
   getCurrentBranch,
@@ -93,6 +94,9 @@ async function previewAction(options: {
       process.exit(0);
     }
 
+    // Detect emoji support for display
+    const emojiModeActive = detectEmojiSupport();
+
     // Main loop
     let exit = false;
     let viewingDetails = false;
@@ -105,7 +109,7 @@ async function previewAction(options: {
 
       if (viewingDetails && currentDetailCommit) {
         // Detail view
-        displayCommitDetails(currentDetailCommit, showBody, showFiles);
+        displayCommitDetails(currentDetailCommit, showBody, showFiles, emojiModeActive);
         console.log(
           `  ${textColors.white("Press")} ${textColors.brightYellow("b")} ${textColors.white("to toggle body,")} ${textColors.brightYellow("f")} ${textColors.white("to toggle files,")} ${textColors.brightYellow("d")} ${textColors.white("for diff,")} ${textColors.brightYellow("r")} ${textColors.white("to revert,")} ${textColors.brightYellow("←")} ${textColors.white("to go back")}`,
         );
@@ -188,6 +192,7 @@ async function previewAction(options: {
           hasMore,
           hasPreviousPage,
           hasMorePages,
+          emojiModeActive,
         );
 
         const action = await waitForListAction(
