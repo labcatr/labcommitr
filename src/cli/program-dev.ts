@@ -73,4 +73,3 @@ Documentation:
 
 // Error on unknown commands
 program.showSuggestionAfterError(true);
-

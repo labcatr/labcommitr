@@ -11,10 +11,10 @@ import { join } from "path";
 async function removeMaps(dir) {
   try {
     const entries = await readdir(dir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
-      
+
       if (entry.isDirectory()) {
         await removeMaps(fullPath);
       } else if (entry.isFile() && entry.name.endsWith(".map")) {
@@ -34,4 +34,3 @@ removeMaps(distDir).catch((error) => {
   console.error("Error removing source maps:", error);
   process.exit(1);
 });
-
