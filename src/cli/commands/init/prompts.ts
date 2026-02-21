@@ -9,12 +9,7 @@
  */
 
 import { ui } from "../../ui/index.js";
-import {
-  textColors,
-  success,
-  attention,
-  highlight,
-} from "./colors.js";
+import { textColors, success, attention, highlight } from "./colors.js";
 import type { GpgState, GpgCapabilities, PlatformInfo } from "./gpg.js";
 import { getAvailableWidth, truncateForPrompt } from "../../utils/terminal.js";
 
@@ -316,38 +311,53 @@ export function displayNextSteps(): void {
 
 /**
  * Display GPG capabilities status
+ * Returns the number of lines written (for compaction via prefixLineCount)
  */
-export function displayGpgStatus(capabilities: GpgCapabilities): void {
+export function displayGpgStatus(capabilities: GpgCapabilities): number {
+  let lineCount = 0;
+
   ui.section("signing", "blue", "GPG signing capabilities");
+  lineCount++;
 
   if (capabilities.gpgInstalled) {
     const version = capabilities.gpgVersion
       ? ` (${capabilities.gpgVersion})`
       : "";
     ui.status.success(`GPG installed${version}`);
+    lineCount++;
   } else {
     ui.status.error("GPG not installed");
-    return;
+    lineCount++;
+    return lineCount;
   }
 
   if (capabilities.keysExist && capabilities.keyId) {
     const shortKeyId = capabilities.keyId.slice(-8);
     ui.status.success(`Signing key: ${shortKeyId}...`);
+    lineCount++;
   } else {
     ui.status.error("No signing keys found");
+    lineCount++;
   }
 
   if (capabilities.gitConfigured) {
     ui.status.success("Git configured for signing");
+    lineCount++;
   } else if (capabilities.keysExist) {
     ui.status.error("Git not configured for signing");
+    lineCount++;
   }
+
+  return lineCount;
 }
 
 /**
  * Prompt for enabling commit signing
  */
-export async function promptSignCommits(state: GpgState): Promise<boolean> {
+export async function promptSignCommits(
+  state: GpgState,
+  prefixLineCount = 0,
+): Promise<boolean> {
   if (state === "fully_configured") {
     const signCommits = await ui.select({
       label: "signing",
@@ -365,6 +375,7 @@ export async function promptSignCommits(state: GpgState): Promise<boolean> {
           hint: "Skip signing",
         },
       ],
+      prefixLineCount,
     });
 
     if (ui.isCancel(signCommits)) {
@@ -390,6 +401,7 @@ export async function promptSignCommits(state: GpgState): Promise<boolean> {
         hint: "Continue without signing",
       },
     ],
+    prefixLineCount,
   });
 
   if (ui.isCancel(configure)) {
@@ -404,6 +416,7 @@ export async function promptSignCommits(state: GpgState): Promise<boolean> {
  */
 export async function promptGpgSetup(
   platformInfo: PlatformInfo,
+  prefixLineCount = 0,
 ): Promise<"install" | "skip"> {
   console.log(
     `${textColors.brightYellow("Commit signing requires GPG to be installed.")}`,
@@ -427,6 +440,7 @@ export async function promptGpgSetup(
         hint: "You can set this up later",
       },
     ],
+    prefixLineCount: prefixLineCount + 1,
   });
 
   if (ui.isCancel(action)) {
@@ -439,7 +453,9 @@ export async function promptGpgSetup(
 /**
  * Prompt for GPG key generation when GPG is installed but no keys exist
  */
-export async function promptKeyGeneration(): Promise<"generate" | "skip"> {
+export async function promptKeyGeneration(
+  prefixLineCount = 0,
+): Promise<"generate" | "skip"> {
   const action = await ui.select({
     label: "signing",
     labelColor: "blue",
@@ -456,6 +472,7 @@ export async function promptKeyGeneration(): Promise<"generate" | "skip"> {
         hint: "You can generate a key later",
       },
     ],
+    prefixLineCount,
   });
 
   if (ui.isCancel(action)) {
