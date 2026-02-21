@@ -1,20 +1,20 @@
 /**
  * Terminal-width-aware utilities for CLI prompt formatting.
  *
- * Provides truncation functions to prevent @clack/prompts option labels
- * from wrapping past the terminal width, which breaks the left │ connector.
+ * Provides truncation functions to prevent prompt option labels
+ * from wrapping past the terminal width.
  */
 
 import { stripVTControlCharacters } from "node:util";
+import { spacing } from "../ui/theme.js";
 
 /**
  * Get available width for prompt option text.
- * Accounts for @clack's prefix: "│  ● " (5 visible chars) + reserved right margin.
+ * Accounts for the UI framework's option indent + reserved right margin.
  */
 export function getAvailableWidth(reservedRight: number = 0): number {
   const columns = process.stdout.columns || 80;
-  const clackPrefix = 5; // "│  ● " or "│  ○ "
-  return columns - clackPrefix - reservedRight;
+  return columns - spacing.optionIndent - reservedRight;
 }
 
 /**
