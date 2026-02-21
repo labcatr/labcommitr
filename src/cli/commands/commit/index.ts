@@ -33,7 +33,7 @@ import {
 } from "./prompts.js";
 import { formatCommitMessage } from "./formatter.js";
 import type { CommitState } from "./types.js";
-import { success } from "../init/colors.js";
+import { clef } from "../init/clef.js";
 
 /**
  * Clear terminal screen for clean prompt display
@@ -183,7 +183,7 @@ export async function commitAction(options: {
     // Require an actual config file - reject fallback defaults
     if (configResult.source === "defaults") {
       Logger.error("Configuration not found");
-      console.error("\n  Run 'lab init' to create configuration file.\n");
+      clef.nudge("Hmm, no config file found. Run 'lab init' to get started!");
       process.exit(1);
     }
 
@@ -354,7 +354,7 @@ export async function commitAction(options: {
           options.verify === false,
         );
 
-        console.log(`${success("✓")} Commit created successfully!`);
+        clef.successReaction("Commit created successfully!");
         const displayMessage = formatForDisplay(
           formattedMessage,
           emojiModeActive,
@@ -377,11 +377,33 @@ export async function commitAction(options: {
 
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error(`\n✗ Error: Git commit failed`);
-        console.error(`\n  ${errorMessage}`);
-        console.error(
-          "\n  Fix: Check 'git status' and verify staged files, then try again\n",
-        );
+
+        // Detect GPG-specific failures
+        const isGpgError =
+          errorMessage.includes("gpg failed to sign") ||
+          errorMessage.includes("secret key not available") ||
+          errorMessage.includes("signing failed") ||
+          errorMessage.includes("gpg: skipped") ||
+          errorMessage.includes("gpg: signing failed");
+
+        if (isGpgError) {
+          clef.errorReaction("Commit signing failed");
+          console.error(`\n  GPG could not sign this commit.`);
+          console.error(`\n  Possible causes:`);
+          console.error(`    • GPG key expired or revoked`);
+          console.error(`    • GPG agent not running`);
+          console.error(`    • Passphrase entry failed`);
+          console.error(
+            `\n  To disable signing, set 'sign_commits: false' in .labcommitr.config.yaml`,
+          );
+          console.error(`  Or run: git config --global commit.gpgsign false\n`);
+        } else {
+          clef.errorReaction("Git commit failed");
+          console.error(`\n  ${errorMessage}`);
+          console.error(
+            "\n  Fix: Check 'git status' and verify staged files, then try again\n",
+          );
+        }
         process.exit(1);
       }
     } else {
@@ -518,7 +540,7 @@ export async function commitAction(options: {
           options.verify === false,
         );
 
-        console.log(`${success("✓")} Commit created successfully!`);
+        clef.successReaction("Commit created successfully!");
         const displayMessage = formatForDisplay(
           formattedMessage,
           emojiModeActive,
@@ -541,11 +563,33 @@ export async function commitAction(options: {
 
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error(`\n✗ Error: Git commit failed`);
-        console.error(`\n  ${errorMessage}`);
-        console.error(
-          "\n  Fix: Check 'git status' and verify staged files, then try again\n",
-        );
+
+        // Detect GPG-specific failures
+        const isGpgError =
+          errorMessage.includes("gpg failed to sign") ||
+          errorMessage.includes("secret key not available") ||
+          errorMessage.includes("signing failed") ||
+          errorMessage.includes("gpg: skipped") ||
+          errorMessage.includes("gpg: signing failed");
+
+        if (isGpgError) {
+          clef.errorReaction("Commit signing failed");
+          console.error(`\n  GPG could not sign this commit.`);
+          console.error(`\n  Possible causes:`);
+          console.error(`    • GPG key expired or revoked`);
+          console.error(`    • GPG agent not running`);
+          console.error(`    • Passphrase entry failed`);
+          console.error(
+            `\n  To disable signing, set 'sign_commits: false' in .labcommitr.config.yaml`,
+          );
+          console.error(`  Or run: git config --global commit.gpgsign false\n`);
+        } else {
+          clef.errorReaction("Git commit failed");
+          console.error(`\n  ${errorMessage}`);
+          console.error(
+            "\n  Fix: Check 'git status' and verify staged files, then try again\n",
+          );
+        }
         process.exit(1);
       }
     }

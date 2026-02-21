@@ -4,46 +4,10 @@
  * Interactive prompts for reverting commits
  */
 
-import { select, confirm, isCancel } from "@clack/prompts";
-import { labelColors, textColors, success, attention } from "../init/colors.js";
+import { ui } from "../../ui/index.js";
+import { textColors, attention } from "../init/colors.js";
 import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo, MergeParent } from "../shared/types.js";
-
-/**
- * Create compact color-coded label
- */
-function label(
-  text: string,
-  color: "magenta" | "cyan" | "blue" | "yellow" | "green",
-): string {
-  const colorFn = {
-    magenta: labelColors.bgBrightMagenta,
-    cyan: labelColors.bgBrightCyan,
-    blue: labelColors.bgBrightBlue,
-    yellow: labelColors.bgBrightYellow,
-    green: labelColors.bgBrightGreen,
-  }[color];
-
-  const width = 7;
-  const textLength = Math.min(text.length, width);
-  const padding = width - textLength;
-  const leftPad = Math.ceil(padding / 2);
-  const rightPad = padding - leftPad;
-  const centeredText =
-    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
-
-  return colorFn(` ${centeredText} `);
-}
-
-/**
- * Handle prompt cancellation
- */
-function handleCancel(value: unknown): void {
-  if (isCancel(value)) {
-    console.log("\nRevert cancelled.");
-    process.exit(0);
-  }
-}
 
 /**
  * Display commit list for revert
@@ -53,13 +17,13 @@ export function displayRevertCommitList(
   startIndex: number,
   totalFetched: number,
   hasMore: boolean,
-  hasPreviousPage: boolean = false,
-  hasMorePages: boolean = false,
+  _hasPreviousPage: boolean = false,
+  _hasMorePages: boolean = false,
   emojiModeActive: boolean = true,
 ): void {
   console.log();
   console.log(
-    `${label("revert", "yellow")}  ${textColors.pureWhite("Select Commit to Revert")}`,
+    `${ui.label("revert", "yellow")}  ${textColors.pureWhite("Select Commit to Revert")}`,
   );
   console.log();
 
@@ -87,7 +51,6 @@ export function displayRevertCommitList(
     );
   }
 
-  // Pagination info
   const endIndex = startIndex + displayCount;
   console.log();
 
@@ -114,13 +77,18 @@ export async function promptMergeParent(
     label: `Parent ${parent.number}${parent.branch ? `: ${parent.branch}` : ""} (${parent.shortHash})${parent.number === 1 ? " [mainline, default]" : ""}`,
   }));
 
-  const selected = await select({
-    message: `${label("parent", "blue")}  ${textColors.pureWhite("Select parent to revert to:")}`,
+  const selected = await ui.select({
+    label: "parent",
+    labelColor: "blue",
+    message: "Select parent to revert to:",
     options,
-    initialValue: "1", // Default to parent 1
+    initialValue: "1",
   });
 
-  handleCancel(selected);
+  if (ui.isCancel(selected)) {
+    console.log("\nRevert cancelled.");
+    process.exit(0);
+  }
   return parseInt(selected as string, 10);
 }
 
@@ -133,7 +101,7 @@ export function displayRevertConfirmation(
 ): void {
   console.log();
   console.log(
-    `${label("confirm", "green")}  ${textColors.pureWhite("Revert Confirmation")}`,
+    `${ui.label("confirm", "green")}  ${textColors.pureWhite("Revert Confirmation")}`,
   );
   console.log();
   console.log(
@@ -155,21 +123,30 @@ export function displayRevertConfirmation(
 export async function promptRevertConfirmation(): Promise<
   "confirm" | "edit" | "cancel"
 > {
-  const confirmed = await confirm({
-    message: `${label("confirm", "green")}  ${textColors.pureWhite("Proceed with revert?")}`,
+  const confirmed = await ui.confirm({
+    label: "confirm",
+    labelColor: "green",
+    message: "Proceed with revert?",
     initialValue: true,
   });
 
-  handleCancel(confirmed);
+  if (ui.isCancel(confirmed)) {
+    console.log("\nRevert cancelled.");
+    process.exit(0);
+  }
 
   if (confirmed) {
-    // Ask if user wants to edit commit message
-    const edit = await confirm({
-      message: `${label("edit", "yellow")}  ${textColors.pureWhite("Edit commit message before reverting?")}`,
+    const edit = await ui.confirm({
+      label: "edit",
+      labelColor: "yellow",
+      message: "Edit commit message before reverting?",
       initialValue: false,
     });
 
-    handleCancel(edit);
+    if (ui.isCancel(edit)) {
+      console.log("\nRevert cancelled.");
+      process.exit(0);
+    }
     return edit ? "edit" : "confirm";
   }
 
