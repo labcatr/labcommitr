@@ -117,6 +117,8 @@ export function buildConfig(
     autoStage?: boolean;
     // Body requirement
     bodyRequired?: boolean;
+    // GPG commit signing (determined by GPG detection in init)
+    signCommits?: boolean;
   },
 ): LabcommitrConfig {
   const preset = getPreset(presetId);
@@ -164,8 +166,8 @@ export function buildConfig(
       aliases: {},
       git: {
         auto_stage: customizations.autoStage ?? false,
-        // Security best-practice: enable signed commits by default
-        sign_commits: true,
+        // GPG signing based on detection result (defaults to false if not specified)
+        sign_commits: customizations.signCommits ?? false,
       },
       shortcuts: {
         enabled: true, // Enabled by default for better UX
