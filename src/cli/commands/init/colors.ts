@@ -12,20 +12,24 @@
  */
 
 /**
- * Bright background colors for step labels
- * Uses ANSI 256-color palette for vibrant, saturated colors
- * Text is black (30m) for maximum contrast
+ * Distinct background colors for step labels
+ * Each label uses a unique ANSI 256-color for visual distinction.
+ * Text is bright white (97m) for readability on deeper backgrounds.
+ *
+ * | Name    | ANSI 256 | Hex     | Used by  |
+ * |---------|----------|---------|----------|
+ * | magenta | 134      | #af5fd7 | preset   |
+ * | cyan    | 37       | #00afaf | emoji    |
+ * | blue    | 33       | #0087ff | signing  |
+ * | yellow  | 172      | #d78700 | stage    |
+ * | green   | 35       | #00af5f | body     |
  */
 export const labelColors = {
-  /**
-   * Uniform Light Blue (#77c0f7) - Consistent label color
-   * Used for all step labels for unified appearance
-   */
-  bgBrightMagenta: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
-  bgBrightCyan: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
-  bgBrightBlue: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
-  bgBrightYellow: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
-  bgBrightGreen: (text: string) => `\x1b[48;5;117m\x1b[30m${text}\x1b[0m`,
+  bgBrightMagenta: (text: string) => `\x1b[48;5;134m\x1b[97m${text}\x1b[0m`,
+  bgBrightCyan: (text: string) => `\x1b[48;5;37m\x1b[97m${text}\x1b[0m`,
+  bgBrightBlue: (text: string) => `\x1b[48;5;33m\x1b[97m${text}\x1b[0m`,
+  bgBrightYellow: (text: string) => `\x1b[48;5;172m\x1b[97m${text}\x1b[0m`,
+  bgBrightGreen: (text: string) => `\x1b[48;5;35m\x1b[97m${text}\x1b[0m`,
 };
 
 /**
@@ -80,6 +84,18 @@ export const textColors = {
    * Perfect for "Clef:" label
    */
   labelBlue: (text: string) => `\x1b[38;5;75m${text}\x1b[0m`,
+
+  /**
+   * Tuxedo Cat Colors - For Clef's tuxedo pattern
+   */
+  // Dark grey (visible on dark terminals) - ears outer, body sides, legs
+  tuxBlack: (text: string) => `\x1b[38;5;236m${text}\x1b[0m`,
+  // Near-white for bib/face
+  tuxWhite: (text: string) => `\x1b[38;5;255m${text}\x1b[0m`,
+  // Pink for nose (^)
+  tuxPink: (text: string) => `\x1b[38;5;218m${text}\x1b[0m`,
+  // Green for eyes (o)
+  tuxGreen: (text: string) => `\x1b[38;5;120m${text}\x1b[0m`,
 
   /**
    * Git Status Colors - Match git's default color scheme

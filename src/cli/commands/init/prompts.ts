@@ -8,70 +8,20 @@
  * Label pattern: [colored label] [2 spaces] [content]
  */
 
-import { select, multiselect, isCancel } from "@clack/prompts";
-import {
-  labelColors,
-  textColors,
-  success,
-  info,
-  attention,
-  highlight,
-} from "./colors.js";
-
-/**
- * Create compact color-coded label
- * Labels are 9 characters wide (7 chars + 2 padding spaces) for alignment
- * Uses bright ANSI 256 colors for high visibility
- * Text is centered within the label
- */
-function label(
-  text: string,
-  color: "magenta" | "cyan" | "blue" | "yellow" | "green",
-): string {
-  const colorFn = {
-    magenta: labelColors.bgBrightMagenta,
-    cyan: labelColors.bgBrightCyan,
-    blue: labelColors.bgBrightBlue,
-    yellow: labelColors.bgBrightYellow,
-    green: labelColors.bgBrightGreen,
-  }[color];
-
-  // Center text within 7-character width (accommodates all current labels)
-  // For visual centering: when padding is odd, put extra space on LEFT for better balance
-  const width = 7;
-  const textLength = Math.min(text.length, width); // Cap at width
-  const padding = width - textLength;
-  // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
-  // For even padding (2, 4, 6...), floor/ceil both work the same
-  const leftPad = Math.ceil(padding / 2);
-  const rightPad = padding - leftPad;
-  const centeredText =
-    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
-
-  return colorFn(` ${centeredText} `);
-}
-
-/**
- * Handle prompt cancellation
- * Exits process gracefully when user cancels
- */
-function handleCancel(value: unknown): void {
-  if (isCancel(value)) {
-    console.log("\nSetup cancelled.");
-    process.exit(0);
-  }
-}
+import { ui } from "../../ui/index.js";
+import { textColors, success, attention, highlight } from "./colors.js";
+import type { GpgState, GpgCapabilities, PlatformInfo } from "./gpg.js";
+import { getAvailableWidth, truncateForPrompt } from "../../utils/terminal.js";
 
 /**
  * Preset option data structure
  * Keeps descriptions for future use while labels only show examples
  */
-const PRESET_OPTIONS: Array<{
+const PRESET_OPTIONS: ReadonlyArray<{
   value: string;
   name: string;
   description: string;
   example: string;
-  hint?: string;
 }> = [
   {
     value: "conventional",
@@ -82,9 +32,9 @@ const PRESET_OPTIONS: Array<{
   {
     value: "angular",
     name: "Angular Convention",
-    description: "Strict format used by Angular and enterprise teams.",
+    description:
+      "Strict format used by Angular and enterprise teams. Includes perf, build, ci types.",
     example: "perf(compiler): optimize template parsing",
-    hint: "Includes perf, build, ci types",
   },
   {
     value: "minimal",
@@ -98,17 +48,40 @@ const PRESET_OPTIONS: Array<{
  * Prompt for commit style preset selection
  */
 export async function promptPreset(): Promise<string> {
-  const preset = await select({
-    message: `${label("preset", "magenta")}  ${textColors.pureWhite("Which commit style fits your project?")}`,
-    options: PRESET_OPTIONS.map((option) => ({
+  const hintParens = 4;
+  const totalAvailable = getAvailableWidth();
+
+  const options = PRESET_OPTIONS.map((option) => {
+    const labelText = option.name;
+    const hintText = `e.g., ${option.example}`;
+    const combinedLength = labelText.length + hintText.length + hintParens;
+
+    const truncatedHint =
+      combinedLength > totalAvailable
+        ? truncateForPrompt(
+            hintText,
+            totalAvailable - labelText.length - hintParens,
+          )
+        : hintText;
+
+    return {
       value: option.value,
-      label: `${option.name} - e.g., ${option.example}`,
-      ...(option.hint && { hint: option.hint }), // Include hint if present
-      // description is kept in PRESET_OPTIONS for future use
-    })),
+      label: labelText,
+      hint: truncatedHint,
+    };
   });
 
-  handleCancel(preset);
+  const preset = await ui.select({
+    label: "preset",
+    labelColor: "magenta",
+    message: "Which commit style fits your project?",
+    options,
+  });
+
+  if (ui.isCancel(preset)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return preset as string;
 }
 
@@ -116,8 +89,10 @@ export async function promptPreset(): Promise<string> {
  * Prompt for emoji support preference
  */
 export async function promptEmoji(): Promise<boolean> {
-  const emoji = await select({
-    message: `${label("emoji", "cyan")}  ${textColors.pureWhite("Enable emoji support in commits?")}`,
+  const emoji = await ui.select({
+    label: "emoji",
+    labelColor: "cyan",
+    message: "Enable emoji support in commits?",
     options: [
       {
         value: false,
@@ -132,7 +107,10 @@ export async function promptEmoji(): Promise<boolean> {
     ],
   });
 
-  handleCancel(emoji);
+  if (ui.isCancel(emoji)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return emoji as boolean;
 }
 
@@ -141,8 +119,10 @@ export async function promptEmoji(): Promise<boolean> {
  * When enabled, stages modified/deleted tracked files automatically (git add -u)
  */
 export async function promptAutoStage(): Promise<boolean> {
-  const autoStage = await select({
-    message: `${label("stage", "yellow")}  ${textColors.pureWhite("Stage files automatically?")}`,
+  const autoStage = await ui.select({
+    label: "stage",
+    labelColor: "yellow",
+    message: "Stage files automatically?",
     options: [
       {
         value: false,
@@ -157,7 +137,10 @@ export async function promptAutoStage(): Promise<boolean> {
     ],
   });
 
-  handleCancel(autoStage);
+  if (ui.isCancel(autoStage)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return autoStage as boolean;
 }
 
@@ -166,8 +149,10 @@ export async function promptAutoStage(): Promise<boolean> {
  * When enabled, commit body becomes required during commit creation
  */
 export async function promptBodyRequired(): Promise<boolean> {
-  const bodyRequired = await select({
-    message: `${label("body", "green")}  ${textColors.pureWhite("Require commit body?")}`,
+  const bodyRequired = await ui.select({
+    label: "body",
+    labelColor: "green",
+    message: "Require commit body?",
     options: [
       {
         value: true,
@@ -182,7 +167,10 @@ export async function promptBodyRequired(): Promise<boolean> {
     ],
   });
 
-  handleCancel(bodyRequired);
+  if (ui.isCancel(bodyRequired)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return bodyRequired as boolean;
 }
 
@@ -192,8 +180,10 @@ export async function promptBodyRequired(): Promise<boolean> {
 export async function promptScope(): Promise<
   "optional" | "selective" | "always" | "never"
 > {
-  const scope = await select({
-    message: `${label("scope", "blue")}  ${textColors.pureWhite("How should scopes work?")}`,
+  const scope = await ui.select({
+    label: "scope",
+    labelColor: "blue",
+    message: "How should scopes work?",
     options: [
       {
         value: "optional",
@@ -218,7 +208,10 @@ export async function promptScope(): Promise<
     ],
   });
 
-  handleCancel(scope);
+  if (ui.isCancel(scope)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return scope as "optional" | "selective" | "always" | "never";
 }
 
@@ -227,10 +220,12 @@ export async function promptScope(): Promise<
  * Only shown when user selects "selective" scope mode
  */
 export async function promptScopeTypes(
-  types: Array<{ id: string; description: string }>,
+  types: ReadonlyArray<{ id: string; description: string }>,
 ): Promise<string[]> {
-  const selected = await multiselect({
-    message: `${label("types", "blue")}  ${textColors.pureWhite("Which types require a scope?")}`,
+  const selected = await ui.multiselect({
+    label: "types",
+    labelColor: "blue",
+    message: "Which types require a scope?",
     options: types.map((type) => ({
       value: type.id,
       label: type.id,
@@ -239,14 +234,16 @@ export async function promptScopeTypes(
     required: false,
   });
 
-  handleCancel(selected);
+  if (ui.isCancel(selected)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
   return selected as string[];
 }
 
 /**
  * Display completed prompts in compact form (Astro pattern)
- * Shows what the user selected after @clack/prompts clears itself
- * This simulates keeping prompts visible on screen
+ * Shows what the user selected after prompts clear themselves
  */
 export function displayCompletedPrompts(config: {
   preset: string;
@@ -254,44 +251,38 @@ export function displayCompletedPrompts(config: {
   scope: string;
 }): void {
   console.log(
-    `${label("preset", "magenta")}  ${textColors.brightCyan(config.preset)}`,
+    `${ui.label("preset", "magenta")}  ${textColors.brightCyan(config.preset)}`,
   );
   console.log(
-    `${label("emoji", "cyan")}  ${textColors.brightCyan(config.emoji ? "Yes" : "No")}`,
+    `${ui.label("emoji", "cyan")}  ${textColors.brightCyan(config.emoji ? "Yes" : "No")}`,
   );
   console.log(
-    `${label("scope", "blue")}  ${textColors.brightCyan(config.scope)}`,
+    `${ui.label("scope", "blue")}  ${textColors.brightCyan(config.scope)}`,
   );
-  console.log(); // Extra line
+  console.log();
 }
 
 /**
  * Display processing steps as compact checklist (Astro-style)
  * Shows what's happening during config generation
- * Each step executes its task and displays success when complete
  */
 export async function displayProcessingSteps(
-  steps: Array<{ message: string; task: () => Promise<void> }>,
+  steps: ReadonlyArray<{ message: string; task: () => Promise<void> }>,
 ): Promise<void> {
   for (const step of steps) {
-    // Show pending state with spinning indicator
     process.stdout.write(`  ${textColors.brightCyan("◐")} ${step.message}...`);
-
-    // Execute task
     await step.task();
-
-    // Clear line and show success checkmark
-    process.stdout.write("\r"); // Return to start of line
+    process.stdout.write("\r");
     console.log(`  ${success("✔")} ${step.message}`);
   }
-  console.log(); // Extra newline after all steps
+  console.log();
 }
 
 /**
  * Display configuration file write result
  */
 export function displayConfigResult(filename: string): void {
-  console.log(`${label("config", "green")}  Writing ${highlight(filename)}`);
+  console.log(`${ui.label("config", "green")}  Writing ${highlight(filename)}`);
   console.log(`          ${success("Done")}\n`);
 }
 
@@ -301,7 +292,7 @@ export function displayConfigResult(filename: string): void {
 export function displayNextSteps(): void {
   console.log(`${success("✓ Ready to commit!")}\n`);
   console.log(
-    `${label("next", "yellow")}  ${attention("Get started with these commands:")}\n`,
+    `${ui.label("next", "yellow")}  ${attention("Get started with these commands:")}\n`,
   );
   console.log(
     `         ${textColors.brightCyan("lab config show")}      View your configuration`,
@@ -311,5 +302,226 @@ export function displayNextSteps(): void {
   );
   console.log(
     `         ${textColors.brightYellow("Customize anytime by editing .labcommitr.config.yaml")}\n`,
+  );
+}
+
+// ============================================================================
+// GPG Signing Prompts
+// ============================================================================
+
+/**
+ * Display GPG capabilities status
+ * Returns the number of lines written (for compaction via prefixLineCount)
+ */
+export function displayGpgStatus(capabilities: GpgCapabilities): number {
+  let lineCount = 0;
+
+  ui.section("signing", "blue", "GPG signing capabilities");
+  lineCount++;
+
+  if (capabilities.gpgInstalled) {
+    const version = capabilities.gpgVersion
+      ? ` (${capabilities.gpgVersion})`
+      : "";
+    ui.status.success(`GPG installed${version}`);
+    lineCount++;
+  } else {
+    ui.status.error("GPG not installed");
+    lineCount++;
+    return lineCount;
+  }
+
+  if (capabilities.keysExist && capabilities.keyId) {
+    const shortKeyId = capabilities.keyId.slice(-8);
+    ui.status.success(`Signing key: ${shortKeyId}...`);
+    lineCount++;
+  } else {
+    ui.status.error("No signing keys found");
+    lineCount++;
+  }
+
+  if (capabilities.gitConfigured) {
+    ui.status.success("Git configured for signing");
+    lineCount++;
+  } else if (capabilities.keysExist) {
+    ui.status.error("Git not configured for signing");
+    lineCount++;
+  }
+
+  return lineCount;
+}
+
+/**
+ * Prompt for enabling commit signing
+ */
+export async function promptSignCommits(
+  state: GpgState,
+  prefixLineCount = 0,
+): Promise<boolean> {
+  if (state === "fully_configured") {
+    const signCommits = await ui.select({
+      label: "signing",
+      labelColor: "blue",
+      message: "Enable GPG commit signing?",
+      options: [
+        {
+          value: true,
+          label: "Yes (Recommended)",
+          hint: "Sign all commits with your GPG key",
+        },
+        {
+          value: false,
+          label: "No",
+          hint: "Skip signing",
+        },
+      ],
+      prefixLineCount,
+    });
+
+    if (ui.isCancel(signCommits)) {
+      console.log("\nSetup cancelled.");
+      process.exit(0);
+    }
+    return signCommits as boolean;
+  }
+
+  const configure = await ui.select({
+    label: "signing",
+    labelColor: "blue",
+    message: "GPG key found but Git not configured",
+    options: [
+      {
+        value: true,
+        label: "Configure Git and enable signing",
+        hint: "Set up Git to use your GPG key",
+      },
+      {
+        value: false,
+        label: "Skip signing for now",
+        hint: "Continue without signing",
+      },
+    ],
+    prefixLineCount,
+  });
+
+  if (ui.isCancel(configure)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
+  return configure as boolean;
+}
+
+/**
+ * Prompt for GPG installation when not available
+ */
+export async function promptGpgSetup(
+  platformInfo: PlatformInfo,
+  prefixLineCount = 0,
+): Promise<"install" | "skip"> {
+  console.log(
+    `${textColors.brightYellow("Commit signing requires GPG to be installed.")}`,
+  );
+
+  const action = await ui.select({
+    label: "signing",
+    labelColor: "blue",
+    message: "What would you like to do?",
+    options: [
+      {
+        value: "install",
+        label: "Show installation instructions",
+        hint: platformInfo.installCommand
+          ? `Using ${platformInfo.packageManager}`
+          : "Manual download",
+      },
+      {
+        value: "skip",
+        label: "Skip signing (continue without)",
+        hint: "You can set this up later",
+      },
+    ],
+    prefixLineCount: prefixLineCount + 1,
+  });
+
+  if (ui.isCancel(action)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
+  return action as "install" | "skip";
+}
+
+/**
+ * Prompt for GPG key generation when GPG is installed but no keys exist
+ */
+export async function promptKeyGeneration(
+  prefixLineCount = 0,
+): Promise<"generate" | "skip"> {
+  const action = await ui.select({
+    label: "signing",
+    labelColor: "blue",
+    message: "GPG installed but no signing keys found",
+    options: [
+      {
+        value: "generate",
+        label: "Generate a new GPG key (guided)",
+        hint: "Creates a 4096-bit RSA key",
+      },
+      {
+        value: "skip",
+        label: "Skip signing for now",
+        hint: "You can generate a key later",
+      },
+    ],
+    prefixLineCount,
+  });
+
+  if (ui.isCancel(action)) {
+    console.log("\nSetup cancelled.");
+    process.exit(0);
+  }
+  return action as "generate" | "skip";
+}
+
+/**
+ * Display GPG installation instructions based on platform
+ */
+export function displayInstallInstructions(platformInfo: PlatformInfo): void {
+  if (platformInfo.installCommand) {
+    ui.indented(
+      `${textColors.pureWhite("Install GPG using your package manager:")}`,
+    );
+    ui.blank();
+    ui.indented(`  ${textColors.brightCyan(platformInfo.installCommand)}`);
+  } else {
+    ui.indented(`${textColors.pureWhite("Install GPG manually:")}`);
+    ui.blank();
+    ui.indented(
+      `  ${textColors.brightCyan("Download from:")} ${platformInfo.manualInstallUrl}`,
+    );
+    ui.blank();
+
+    switch (platformInfo.os) {
+      case "darwin":
+        ui.indented(
+          `  ${textColors.brightYellow("•")} macOS: Download "GnuPG for OS X" or install Homebrew first`,
+        );
+        ui.indented(`    ${textColors.brightCyan("https://brew.sh/")}`);
+        break;
+      case "win32":
+        ui.indented(
+          `  ${textColors.brightYellow("•")} Windows: Download "Gpg4win" for full GPG suite`,
+        );
+        break;
+      case "linux":
+        ui.indented(
+          `  ${textColors.brightYellow("•")} Linux: Use your distribution's package manager`,
+        );
+        break;
+    }
+  }
+
+  ui.blank();
+  ui.indented(
+    `${textColors.brightYellow("After installing, run 'lab init' again to configure signing.")}`,
   );
 }
