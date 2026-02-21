@@ -37,6 +37,8 @@ export interface SelectConfig<T> {
   options: ReadonlyArray<SelectOption<T>>;
   initialValue?: T;
   shortcuts?: ShortcutMapping | null;
+  /** Number of externally-written lines above this prompt to clear on submit */
+  prefixLineCount?: number;
 }
 
 /**

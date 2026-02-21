@@ -101,9 +101,10 @@ export async function select<T>(
       process.stdin.removeListener("keypress", onKeypress);
       rawCleanup();
 
-      // Clear the active render
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      // Clear the active render plus any externally-written prefix lines
+      const totalClear = renderedLines + (config.prefixLineCount ?? 0);
+      if (totalClear > 0) {
+        line.clearLines(totalClear);
       }
 
       if (value === CANCEL_SYMBOL) {
