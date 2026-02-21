@@ -16,6 +16,18 @@
 import { setTimeout as sleep } from "timers/promises";
 import { textColors, success, attention } from "./colors.js";
 
+/** Color map keys for tuxedo coloring */
+type ColorKey = "B" | "W" | "P" | "G" | " ";
+
+/** Maps color key to its color function */
+const COLOR_MAP: Record<ColorKey, ((text: string) => string) | null> = {
+  B: textColors.tuxBlack,
+  W: textColors.tuxWhite,
+  P: textColors.tuxPink,
+  G: textColors.tuxGreen,
+  " ": null, // no color — use pureWhite
+};
+
 interface AnimationCapabilities {
   supportsAnimation: boolean;
   supportsColor: boolean;
@@ -29,20 +41,38 @@ interface AnimationCapabilities {
  */
 class Clef {
   private caps: AnimationCapabilities;
-  private currentX: number = 0;
 
-  // Raw ASCII art frames (unprocessed)
+  // Raw ASCII art frames — 11 chars wide x 5 lines tall
   private readonly rawFrames = {
-    standing: `  /\\_/\\  \n ( ^.^ ) \n /|   | \n(|_   |_)`,
-    walk1: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n(_|   _|)`,
-    walk2: `  /\\_/\\  \n ( ^.^ ) \n /|   |\\ \n(|_   |_)`,
-    typing: `  /\\_/\\  \n ( -.- ) \n /|⌨ | \n(_|__|_)`,
-    celebrate: `  /\\_/\\  \n ( ^ω^ ) \n  | |   \n/   \\ `,
-    waving: `  /\\_/\\  \n ( ^.^ )~ \n /|   | \n(|_   |_)`,
+    standing: `  /\\_/\\\n ( o.o )\n  > ^ <\n /|   |\\\n(_|   |_)`,
+    walk1: `  /\\_/\\\n ( o.o )\n  > ^ <\n /|   |\\\n( |   _|)`,
+    walk2: `  /\\_/\\\n ( o.o )\n  > ^ <\n /|   |\\\n(_|   | )`,
+    typing: `  /\\_/\\\n ( -.- )\n  > ^ <\n /|[=]|\\\n(_|___|_)`,
+    celebrate: `  /\\_/\\\n ( ^w^ )\n  > ^ <\n \\|   |/\n / \\ / \\`,
+    waving: `  /\\_/\\\n ( o.o )~\n  > ^ <\n /|   |\\\n(_|   |_)`,
+    earL: `  /\\_ \\\n ( o.o )\n  > ^ <\n /|   |\\\n(_|   |_)`,
+    earR: `  / _/\\\n ( o.o )\n  > ^ <\n /|   |\\\n(_|   |_)`,
+    surprised: `  /\\_/\\\n ( O.O )!\n  > ^ <\n /|   |\\\n(_|   |_)`,
   };
 
-  // Normalized frames (uniform dimensions)
-  private frames!: typeof this.rawFrames;
+  // Parallel color maps — each row must match the exact char count of its frame row
+  // B=tuxBlack (ears, body, legs), W=tuxWhite (face, bib), P=tuxPink (nose), G=tuxGreen (eyes)
+  // space = pureWhite fallback
+  private readonly rawColorMaps: Record<keyof typeof this.rawFrames, string> = {
+    standing: `  BBBBB\n W GBG W\n  B P B\n B     B\nBB     BB`,
+    walk1: `  BBBBB\n W GBG W\n  B P B\n B     B\nB     B B`,
+    walk2: `  BBBBB\n W GBG W\n  B P B\n B     B\nBB      B`,
+    typing: `  BBBBB\n W WBW W\n  B P B\n B BBB B\nBB BBB BB`,
+    celebrate: `  BBBBB\n W WWW W\n  B P B\n B     B\n B B B B`,
+    waving: `  BBBBB\n W GBG WW\n  B P B\n B     B\nBB     BB`,
+    earL: `  BBW B\n W GBG W\n  B P B\n B     B\nBB     BB`,
+    earR: `  B WBB\n W GBG W\n  B P B\n B     B\nBB     BB`,
+    surprised: `  BBBBB\n W GBG WW\n  B P B\n B     B\nBB     BB`,
+  };
+
+  // Normalized frames and color maps (uniform dimensions)
+  private frames!: Record<string, string>;
+  private colorMaps!: Record<string, string>;
 
   // Frame dimensions after normalization
   private frameWidth = 0;
@@ -67,40 +97,42 @@ class Clef {
   }
 
   /**
-   * Normalize all frames to uniform width and height
+   * Normalize all frames and color maps to uniform width and height
    * Ensures consistent alignment across all animation frames
-   * Critical for terminal compatibility with different fonts/dimensions
    */
   private normalizeFrames(): void {
-    // Find maximum width across all frames
     const allLines = Object.values(this.rawFrames).flatMap((frame: string) =>
       frame.split("\n"),
     );
     this.frameWidth = Math.max(...allLines.map((line: string) => line.length));
-
-    // Find maximum height across all frames
     this.frameHeight = Math.max(
       ...Object.values(this.rawFrames).map(
         (frame: string) => frame.split("\n").length,
       ),
     );
 
-    // Normalize each frame to maximum dimensions
-    const keyedFrames: Partial<typeof this.rawFrames> = {};
-    (Object.keys(this.rawFrames) as Array<keyof typeof this.rawFrames>).forEach(
-      (key) => {
-        const lines = this.rawFrames[key].split("\n");
-        const normalized = lines.map((line: string) =>
-          line.padEnd(this.frameWidth, " "),
-        );
-        // Pad height if necessary
-        while (normalized.length < this.frameHeight) {
-          normalized.push(" ".repeat(this.frameWidth));
-        }
-        keyedFrames[key] = normalized.join("\n");
-      },
-    );
-    this.frames = keyedFrames as typeof this.rawFrames;
+    const normalizeString = (raw: string): string => {
+      const lines = raw.split("\n");
+      const normalized = lines.map((line: string) =>
+        line.padEnd(this.frameWidth, " "),
+      );
+      while (normalized.length < this.frameHeight) {
+        normalized.push(" ".repeat(this.frameWidth));
+      }
+      return normalized.join("\n");
+    };
+
+    const keyedFrames: Record<string, string> = {};
+    const keyedMaps: Record<string, string> = {};
+    const keys = Object.keys(this.rawFrames) as Array<
+      keyof typeof this.rawFrames
+    >;
+    keys.forEach((key) => {
+      keyedFrames[key] = normalizeString(this.rawFrames[key]);
+      keyedMaps[key] = normalizeString(this.rawColorMaps[key]);
+    });
+    this.frames = keyedFrames;
+    this.colorMaps = keyedMaps;
   }
 
   /**
@@ -150,18 +182,37 @@ class Clef {
   }
 
   /**
-   * Render ASCII art frame at specific horizontal position
-   * Uses absolute cursor positioning for each line
-   * Adds 1 line of padding above the cat (starts at line 2)
+   * Render frame with per-character tuxedo coloring
+   * Iterates frame and color map in parallel, applying mapped colors
+   * Falls back to pureWhite when color is not supported
    */
-  private renderFrame(frame: string, x: number): void {
-    const lines = frame.split("\n");
-    lines.forEach((line, idx) => {
-      // Move cursor to position (row, column)
-      // Start at line 2 (1 line padding above)
+  private renderColorizedFrame(frameName: string, x: number): void {
+    const frame = this.frames[frameName];
+    const cmap = this.colorMaps[frameName];
+    if (!frame || !cmap) return;
+
+    const frameLines = frame.split("\n");
+    const cmapLines = cmap.split("\n");
+
+    frameLines.forEach((line, idx) => {
       process.stdout.write(`\x1B[${idx + 2};${x}H`);
-      // Make cat white for better visibility
-      process.stdout.write(textColors.pureWhite(line));
+      const mapLine = cmapLines[idx] || "";
+      let colored = "";
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === " ") {
+          colored += " ";
+          continue;
+        }
+        if (!this.caps.supportsColor) {
+          colored += ch;
+          continue;
+        }
+        const key = (mapLine[i] || " ") as ColorKey;
+        const colorFn = COLOR_MAP[key];
+        colored += colorFn ? colorFn(ch) : textColors.pureWhite(ch);
+      }
+      process.stdout.write(colored);
     });
   }
 
@@ -196,35 +247,31 @@ class Clef {
 
   /**
    * Animate legs in place without horizontal movement
-   * Continues until shouldContinue callback returns false
+   * Uses colorized rendering. Continues until shouldContinue returns false
    */
   private async animateLegs(
     x: number,
     shouldContinue: () => boolean,
   ): Promise<void> {
-    const frames = [this.frames.walk1, this.frames.walk2];
+    const frameNames = ["walk1", "walk2"];
     let frameIndex = 0;
 
     while (shouldContinue()) {
-      this.renderFrame(frames[frameIndex % 2], x);
+      this.renderColorizedFrame(frameNames[frameIndex % 2], x);
       frameIndex++;
-      await sleep(200); // Leg animation speed
+      await sleep(250);
     }
   }
 
   /**
-   * Fade out cat Houston-style
-   * Erases cat from bottom to top for smooth disappearance
+   * Fade out cat bottom-to-top
+   * Erases each line from bottom to top for smooth disappearance
    */
   private async fadeOut(x: number): Promise<void> {
-    const catLines = this.frames.standing.split("\n");
-
-    // Erase from bottom to top
-    // Cat starts at line 2 (1 line padding), so fade from line 5 to line 2
-    for (let i = catLines.length - 1; i >= 0; i--) {
+    for (let i = this.frameHeight - 1; i >= 0; i--) {
       process.stdout.write(`\x1B[${2 + i};${x}H`);
-      process.stdout.write(" ".repeat(20)); // Clear line with spaces
-      await sleep(80);
+      process.stdout.write(" ".repeat(this.frameWidth + 2));
+      await sleep(100);
     }
   }
 
@@ -240,89 +287,90 @@ class Clef {
   ): Promise<void> {
     if (!this.caps.supportsAnimation) return;
 
-    const frames = [this.frames.walk1, this.frames.walk2];
+    const frameNames = ["walk1", "walk2"];
     const steps = 15;
     const delay = duration / steps;
 
     this.hideCursor();
+    try {
+      for (let i = 0; i <= steps; i++) {
+        const progress = i / steps;
+        const currentX = Math.floor(startX + (endX - startX) * progress);
 
-    for (let i = 0; i <= steps; i++) {
-      const progress = i / steps;
-      const currentX = Math.floor(startX + (endX - startX) * progress);
+        this.clearScreen();
+        this.renderColorizedFrame(frameNames[i % 2], currentX);
 
-      this.clearScreen();
-      this.renderFrame(frames[i % 2], currentX);
-
-      await sleep(delay);
+        await sleep(delay);
+      }
+    } finally {
+      this.showCursor();
     }
-
-    this.showCursor();
-    this.currentX = endX;
   }
 
   /**
-   * Introduction sequence
-   * Cat appears stationary with animated legs, text types beside it
-   * Houston-style: text types out, clears, new text types, then fades
-   * Duration: approximately 5 seconds
+   * Introduction sequence — pop-up with ear twitch
+   * 1. Instant appear  2. Ear twitch (600ms)  3. Label + typewriter (700ms)
+   * 4. Hold (400ms)  5. Fade-out bottom-to-top (500ms)  6. Clear
+   * Duration: ~2.7 seconds
    */
   async intro(): Promise<void> {
     if (!this.caps.supportsAnimation) {
-      // Static fallback for non-TTY environments
       console.log(this.frames.standing);
-      console.log("Hey there! My name is Clef!");
-      console.log("Let me help you get started...meoww!\n");
-      await sleep(2000);
+      console.log("Clef: Hey there! Let me help you set things up.\n");
+      await sleep(1500);
       return;
     }
 
     this.hideCursor();
-    this.clearScreen();
+    try {
+      this.clearScreen();
 
-    const catX = 1; // Start at column 1 (adds 1 column of left padding)
-    const textX = catX + this.frameWidth + 1; // 1 space padding after normalized frame
-    const labelY = 3; // Line 2 of cat output - label "Clef:"
-    const messageY = 4; // Line 3 of cat output - message text
+      const catX = 1;
+      const textX = catX + this.frameWidth + 2;
+      const labelY = 3;
+      const messageY = 4;
 
-    // Messages to type
-    const messages = [
-      "Hey there! My name is Clef!",
-      "Let me help you get started...meoww!",
-    ];
+      // 1. Instant appear — standing frame with tuxedo coloring
+      this.renderColorizedFrame("standing", catX);
 
-    // Start leg animation in background (non-blocking)
-    let isAnimating = true;
-    const animationPromise = this.animateLegs(catX, () => isAnimating);
+      // 2. Ear twitch — 3 frames at 200ms each
+      await sleep(200);
+      this.renderColorizedFrame("earL", catX);
+      await sleep(200);
+      this.renderColorizedFrame("earR", catX);
+      await sleep(200);
+      this.renderColorizedFrame("standing", catX);
 
-    // Write static label "Clef:" in blue
-    process.stdout.write(`\x1B[${labelY};${textX}H`);
-    process.stdout.write(textColors.labelBlue("Clef: "));
+      // 3. Label appear
+      process.stdout.write(`\x1B[${labelY};${textX}H`);
+      process.stdout.write(textColors.labelBlue("Clef:"));
 
-    // Type first message on line below
-    await this.typeText(messages[0], textX, messageY);
-    await sleep(1000);
+      // 4. Typewriter message with concurrent leg animation
+      const message = "Hey there! Let me help you set things up.";
+      let isAnimating = true;
+      const animationPromise = this.animateLegs(catX, () => isAnimating);
 
-    // Clear message only (keep label)
-    this.clearLine(messageY, textX);
-    await sleep(300);
+      await this.typeText(message, textX, messageY, 20);
 
-    // Type second message
-    await this.typeText(messages[1], textX, messageY);
-    await sleep(1200);
+      // 5. Hold
+      await sleep(400);
 
-    // Stop leg animation
-    isAnimating = false;
-    await animationPromise;
+      // Stop leg animation before fade
+      isAnimating = false;
+      await animationPromise;
 
-    // Fade out cat Houston-style
-    await this.fadeOut(catX);
+      // 6. Fade-out bottom-to-top, also clear text lines
+      await this.fadeOut(catX);
+      this.clearLine(labelY, textX);
+      this.clearLine(messageY, textX);
 
-    // Small pause before clearing
-    await sleep(200);
+      await sleep(100);
 
-    // Clear screen for prompts
-    this.clearScreen();
-    this.showCursor();
+      // 7. Clear screen for prompts
+      this.clearScreen();
+    } finally {
+      this.showCursor();
+    }
   }
 
   /**
@@ -342,9 +390,13 @@ class Clef {
     // Walk in from left
     await this.walk(0, 10, 800);
 
-    // Show typing animation
+    // Show typing animation with tuxedo coloring
     this.clearScreen();
-    console.log(this.frames.typing);
+    const typingLines = this.frames.typing.split("\n");
+    const typingCmap = this.colorMaps.typing.split("\n");
+    for (let i = 0; i < typingLines.length; i++) {
+      console.log(this.colorizeLineToString(typingLines[i], typingCmap[i]));
+    }
     console.log(`      ${attention(message)}`);
 
     // Execute actual task
@@ -359,57 +411,154 @@ class Clef {
     this.clearScreen();
   }
 
+  /** Randomized farewell messages for the outro */
+  private readonly farewellMessages = [
+    "You're all set! Happy committing!",
+    "All done! Go ship something great!",
+    "Configuration complete! Time to commit!",
+  ];
+
   /**
-   * Outro sequence
-   * Cat and text display side by side using normal console output
-   * Astro Houston-style: stays on screen as final message (no clear, no walk off)
-   * Duration: approximately 2 seconds
+   * Outro sequence — build-up from bottom + dance + farewell
+   * 1. Build-up celebrate frame bottom-to-top (400ms)
+   * 2. Dance cycle (600ms)  3. Final waving frame with farewell  4. Hold (1s)
+   * Duration: ~2 seconds. Output stays visible.
    */
   async outro(): Promise<void> {
+    const farewell =
+      this.farewellMessages[
+        Math.floor(Math.random() * this.farewellMessages.length)
+      ];
+
     if (!this.caps.supportsAnimation) {
-      // Static fallback
       console.log(this.frames.waving);
-      console.log("You're all set! Happy committing!");
-      return; // No clear - message stays visible
+      console.log(`Clef: ${farewell}`);
+      return;
     }
 
-    // Add spacing before outro
+    console.log(); // spacing after processing steps
+
+    this.hideCursor();
+    try {
+      // 1. Build-up from bottom — render celebrate frame line-by-line
+      //    Print blank lines to reserve space, then use relative cursor movement
+      const celebrateLines = this.frames.celebrate.split("\n");
+      const celebrateCmap = this.colorMaps.celebrate.split("\n");
+      for (let i = 0; i < this.frameHeight; i++) {
+        console.log();
+      }
+      // Move cursor up to top of the reserved area
+      process.stdout.write(`\x1B[${this.frameHeight}A`);
+      // Save cursor position at top of frame area
+      process.stdout.write("\x1B[s");
+
+      // Render from bottom to top
+      for (let i = this.frameHeight - 1; i >= 0; i--) {
+        // Restore to saved position, then move down i lines
+        process.stdout.write("\x1B[u");
+        if (i > 0) process.stdout.write(`\x1B[${i}B`);
+        process.stdout.write("\r");
+        this.writeColorizedLine(celebrateLines[i], celebrateCmap[i]);
+        await sleep(100);
+      }
+
+      // 2. Quick dance — 3 frames at 200ms using relative positioning
+      const danceSequence = ["celebrate", "waving", "waving"];
+      for (const frameName of danceSequence) {
+        const lines = this.frames[frameName].split("\n");
+        const clines = this.colorMaps[frameName].split("\n");
+        for (let i = 0; i < this.frameHeight; i++) {
+          process.stdout.write("\x1B[u");
+          if (i > 0) process.stdout.write(`\x1B[${i}B`);
+          process.stdout.write("\r\x1B[K"); // move to col 1 and clear line
+          this.writeColorizedLine(lines[i], clines[i]);
+        }
+        await sleep(200);
+      }
+
+      // 3. Clear the dance area and reprint final frame via console.log (persists in scrollback)
+      for (let i = 0; i < this.frameHeight; i++) {
+        process.stdout.write("\x1B[u");
+        if (i > 0) process.stdout.write(`\x1B[${i}B`);
+        process.stdout.write("\r\x1B[K");
+      }
+      // Move cursor back to top of frame area
+      process.stdout.write("\x1B[u\r");
+    } finally {
+      this.showCursor();
+    }
+
+    // Print final waving frame with side text via console.log (persists in scrollback)
+    const wavingLines = this.frames.waving.split("\n");
+    const wavingCmap = this.colorMaps.waving.split("\n");
+    for (let i = 0; i < wavingLines.length; i++) {
+      let line = this.colorizeLineToString(wavingLines[i], wavingCmap[i]);
+      if (i === 1) {
+        line += "  " + textColors.labelBlue("Clef:");
+      } else if (i === 2) {
+        line += "  " + textColors.pureWhite(farewell);
+      }
+      console.log(line);
+    }
+
     console.log();
 
-    // Display cat and text side by side
-    // Cat on left, "Clef:" label and message on right
-    const catLines = this.frames.waving.split("\n");
-    const catX = 1; // Start at column 1 (adds 1 column of left padding)
-    const textX = catX + this.frameWidth + 1; // 1 space padding after cat
+    // 4. Hold — let user read the message
+    await sleep(1000);
+  }
 
-    // Display cat lines with label/message beside appropriate lines
-    for (let i = 0; i < catLines.length; i++) {
-      if (i === 1) {
-        // Line 1: Face line - display "Clef:" label
-        console.log(
-          textColors.pureWhite(catLines[i]) +
-            "  " +
-            textColors.labelBlue("Clef:"),
-        );
-      } else if (i === 2) {
-        // Line 2: Body line - display message text
-        console.log(
-          textColors.pureWhite(catLines[i]) +
-            "  " +
-            textColors.pureWhite("You're all set! Happy committing!"),
-        );
-      } else {
-        // Other lines: just the cat in white
-        console.log(textColors.pureWhite(catLines[i]));
+  /**
+   * Build a colorized line string from a frame line and its color map line
+   */
+  private colorizeLineToString(line: string, mapLine: string): string {
+    let colored = "";
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === " ") {
+        colored += " ";
+        continue;
       }
+      if (!this.caps.supportsColor) {
+        colored += ch;
+        continue;
+      }
+      const key = (mapLine?.[i] || " ") as ColorKey;
+      const colorFn = COLOR_MAP[key];
+      colored += colorFn ? colorFn(ch) : textColors.pureWhite(ch);
     }
+    return colored;
+  }
 
-    console.log(); // Extra line at end
+  /** Write a single colorized line to stdout (no newline) */
+  private writeColorizedLine(line: string, mapLine: string): void {
+    process.stdout.write(this.colorizeLineToString(line, mapLine));
+  }
 
-    // Small pause to let user see the message
-    await sleep(1500);
+  /** One-line success reaction: cat face + message */
+  successReaction(message: string): void {
+    if (!this.caps.supportsColor) {
+      console.log(`\u2713 ${message}`);
+      return;
+    }
+    console.log(` ( ^w^ )  ${success("\u2713")} ${message}`);
+  }
 
-    // Done - cat and message remain visible (no clear, no cursor hide)
+  /** One-line error reaction: cat face + message */
+  errorReaction(message: string): void {
+    if (!this.caps.supportsColor) {
+      console.error(`\u2717 ${message}`);
+      return;
+    }
+    console.error(` ( O.O )  \u2717 ${message}`);
+  }
+
+  /** One-line nudge: cat face + hint */
+  nudge(message: string): void {
+    if (!this.caps.supportsColor) {
+      console.log(message);
+      return;
+    }
+    console.log(` ( o.o )  ${message}`);
   }
 
   /**

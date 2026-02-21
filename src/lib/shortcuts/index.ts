@@ -2,12 +2,11 @@
  * Shortcuts Module
  *
  * Handles keyboard shortcut configuration, auto-assignment, and integration
- * with @clack/prompts select() function.
+ * with the custom UI select() function.
  */
 
-import type { ShortcutMapping, ShortcutCharacterSet } from "./types.js";
+import type { ShortcutMapping } from "./types.js";
 import { autoAssignShortcuts } from "./auto-assign.js";
-import { DEFAULT_CHAR_SET } from "./types.js";
 
 /**
  * Shortcuts configuration from user config

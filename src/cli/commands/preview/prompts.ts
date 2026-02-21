@@ -4,38 +4,11 @@
  * Interactive prompts for browsing commit history
  */
 
-import { select, isCancel } from "@clack/prompts";
-import { labelColors, textColors } from "../init/colors.js";
+import { ui } from "../../ui/index.js";
+import { textColors } from "../init/colors.js";
 import { formatForDisplay } from "../../../lib/util/emoji.js";
 import type { CommitInfo } from "../shared/types.js";
-import { getCommitDetails, getCommitDiff } from "../shared/git-operations.js";
 import readline from "readline";
-
-/**
- * Create compact color-coded label
- */
-function label(
-  text: string,
-  color: "magenta" | "cyan" | "blue" | "yellow" | "green",
-): string {
-  const colorFn = {
-    magenta: labelColors.bgBrightMagenta,
-    cyan: labelColors.bgBrightCyan,
-    blue: labelColors.bgBrightBlue,
-    yellow: labelColors.bgBrightYellow,
-    green: labelColors.bgBrightGreen,
-  }[color];
-
-  const width = 7;
-  const textLength = Math.min(text.length, width);
-  const padding = width - textLength;
-  const leftPad = Math.ceil(padding / 2);
-  const rightPad = padding - leftPad;
-  const centeredText =
-    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
-
-  return colorFn(` ${centeredText} `);
-}
 
 /**
  * Display commit list
@@ -51,7 +24,7 @@ export function displayCommitList(
 ): void {
   console.log();
   console.log(
-    `${label("preview", "cyan")}  ${textColors.pureWhite("Commit History")}`,
+    `${ui.label("preview", "cyan")}  ${textColors.pureWhite("Commit History")}`,
   );
   console.log();
 
@@ -131,7 +104,7 @@ export function displayCommitDetails(
 ): void {
   console.log();
   console.log(
-    `${label("detail", "green")}  ${textColors.pureWhite("Commit Details")}`,
+    `${ui.label("detail", "green")}  ${textColors.pureWhite("Commit Details")}`,
   );
   console.log();
   console.log(`  ${textColors.brightWhite("Hash:")} ${commit.hash}`);
@@ -211,7 +184,7 @@ export function displayCommitDetails(
 export function displayHelp(): void {
   console.log();
   console.log(
-    `${label("help", "yellow")}  ${textColors.pureWhite("Keyboard Shortcuts")}`,
+    `${ui.label("help", "yellow")}  ${textColors.pureWhite("Keyboard Shortcuts")}`,
   );
   console.log();
   console.log(`  ${textColors.brightCyan("0-9")}     View commit details`);
@@ -344,14 +317,14 @@ export async function waitForListAction(
         }
       }
 
-      // Previous batch - allow if there's a previous page
+      // Previous batch
       if ((char === "p" || char === "P") && hasPreviousPage) {
         cleanup();
         resolve("previous");
         return;
       }
 
-      // Next batch - allow if there are more pages to show
+      // Next batch
       if ((char === "n" || char === "N") && hasMorePages) {
         cleanup();
         resolve("next");

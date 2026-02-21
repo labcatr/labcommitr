@@ -2,15 +2,12 @@
  * Commit Command Prompts
  *
  * Interactive prompts for commit creation
- * Uses same styling as init command for consistency
+ * Uses custom UI framework for clean, connector-free output
  */
 
-import { select, text, isCancel, log } from "@clack/prompts";
-import { labelColors, textColors, success, attention } from "../init/colors.js";
-import type {
-  LabcommitrConfig,
-  CommitType,
-} from "../../../lib/config/types.js";
+import { ui } from "../../ui/index.js";
+import { textColors, attention } from "../init/colors.js";
+import type { LabcommitrConfig } from "../../../lib/config/types.js";
 import type { ValidationError } from "./types.js";
 import { editInEditor, detectEditor } from "./editor.js";
 import {
@@ -18,49 +15,6 @@ import {
   formatLabelWithShortcut,
   getShortcutForValue,
 } from "../../../lib/shortcuts/index.js";
-import { selectWithShortcuts } from "../../../lib/shortcuts/select-with-shortcuts.js";
-
-/**
- * Create compact color-coded label
- * Labels are 9 characters wide (7 chars + 2 padding spaces) for alignment
- * Text is centered within the label
- */
-function label(
-  text: string,
-  color: "magenta" | "cyan" | "blue" | "yellow" | "green",
-): string {
-  const colorFn = {
-    magenta: labelColors.bgBrightMagenta,
-    cyan: labelColors.bgBrightCyan,
-    blue: labelColors.bgBrightBlue,
-    yellow: labelColors.bgBrightYellow,
-    green: labelColors.bgBrightGreen,
-  }[color];
-
-  // Center text within 7-character width (accommodates "subject" and "preview")
-  // For visual centering: when padding is odd, put extra space on LEFT for better balance
-  const width = 7;
-  const textLength = Math.min(text.length, width); // Cap at width
-  const padding = width - textLength;
-  // For odd padding (1, 3, 5...), ceil puts extra space on LEFT (better visual weight)
-  // For even padding (2, 4, 6...), floor/ceil both work the same
-  const leftPad = Math.ceil(padding / 2);
-  const rightPad = padding - leftPad;
-  const centeredText =
-    " ".repeat(leftPad) + text.substring(0, textLength) + " ".repeat(rightPad);
-
-  return colorFn(` ${centeredText} `);
-}
-
-/**
- * Handle prompt cancellation
- */
-function handleCancel(value: unknown): void {
-  if (isCancel(value)) {
-    console.log("\nCommit cancelled.");
-    process.exit(0);
-  }
-}
 
 /**
  * Prompt for commit type selection
@@ -102,37 +56,42 @@ export async function promptType(
 
   const displayHints = config.advanced.shortcuts?.display_hints ?? true;
 
-  // Find initial type index if provided
-  const initialIndex = initialType
-    ? config.types.findIndex((t) => t.id === initialType)
-    : undefined;
-
   // Build options with shortcuts
   const options = config.types.map((type) => {
     const shortcut = getShortcutForValue(type.id, shortcutMapping);
     const baseLabel = `${type.id.padEnd(8)} ${type.description}`;
-    const label = formatLabelWithShortcut(baseLabel, shortcut, displayHints);
+    const optionLabel = formatLabelWithShortcut(
+      baseLabel,
+      shortcut,
+      displayHints,
+    );
 
     return {
       value: type.id,
-      label,
+      label: optionLabel,
       hint: type.description,
     };
   });
 
-  const selected = await selectWithShortcuts(
-    {
-      message: `${label("type", "magenta")}  ${textColors.pureWhite("Select commit type:")}`,
-      options,
-      initialValue:
-        initialIndex !== undefined && initialIndex >= 0
-          ? config.types[initialIndex].id
-          : undefined,
-    },
-    shortcutMapping,
-  );
+  // Find initial type value if provided
+  const initialValue = initialType
+    ? config.types.find((t) => t.id === initialType)?.id
+    : undefined;
 
-  handleCancel(selected);
+  const selected = await ui.select({
+    label: "type",
+    labelColor: "magenta",
+    message: "Select commit type:",
+    options,
+    initialValue,
+    shortcuts: shortcutMapping,
+  });
+
+  if (ui.isCancel(selected)) {
+    console.log("\nCommit cancelled.");
+    process.exit(0);
+  }
+
   const typeId = selected as string;
   const typeConfig = config.types.find((t) => t.id === typeId)!;
 
@@ -191,27 +150,24 @@ export async function promptScope(
       },
     ];
 
-    // Find initial scope index if provided
-    const initialIndex = initialScope
-      ? allowedScopes.findIndex((s) => s === initialScope)
-      : undefined;
-
-    const selected = await select({
-      message: `${label("scope", "blue")}  ${textColors.pureWhite(
-        `Enter scope ${isRequired ? "(required for '" + selectedType + "')" : "(optional)"}:`,
-      )}`,
+    const selected = await ui.select({
+      label: "scope",
+      labelColor: "blue",
+      message: `Enter scope ${isRequired ? "(required for '" + selectedType + "')" : "(optional)"}:`,
       options,
-      initialValue:
-        initialIndex !== undefined && initialIndex >= 0
-          ? allowedScopes[initialIndex]
-          : initialScope || undefined,
+      initialValue: initialScope || undefined,
     });
 
-    handleCancel(selected);
+    if (ui.isCancel(selected)) {
+      console.log("\nCommit cancelled.");
+      process.exit(0);
+    }
 
     if (selected === "__custom__") {
-      const custom = await text({
-        message: `${label("scope", "blue")}  ${textColors.pureWhite("Enter custom scope:")}`,
+      const custom = await ui.text({
+        label: "scope",
+        labelColor: "blue",
+        message: "Enter custom scope:",
         placeholder: initialScope || "",
         initialValue: initialScope,
         validate: (value) => {
@@ -222,7 +178,10 @@ export async function promptScope(
         },
       });
 
-      handleCancel(custom);
+      if (ui.isCancel(custom)) {
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
       return custom ? (custom as string) : undefined;
     }
 
@@ -230,10 +189,10 @@ export async function promptScope(
   }
 
   // Use text input for free-form scope
-  const scope = await text({
-    message: `${label("scope", "blue")}  ${textColors.pureWhite(
-      `Enter scope ${isRequired ? "(required)" : "(optional)"}:`,
-    )}`,
+  const scope = await ui.text({
+    label: "scope",
+    labelColor: "blue",
+    message: `Enter scope ${isRequired ? "(required)" : "(optional)"}:`,
     placeholder: "",
     initialValue: initialScope,
     validate: (value) => {
@@ -244,7 +203,10 @@ export async function promptScope(
     },
   });
 
-  handleCancel(scope);
+  if (ui.isCancel(scope)) {
+    console.log("\nCommit cancelled.");
+    process.exit(0);
+  }
   return scope ? (scope as string) : undefined;
 }
 
@@ -257,7 +219,6 @@ function validateSubject(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  // Check min length
   if (subject.length < config.validation.subject_min_length) {
     errors.push({
       message: `Subject too short (${subject.length} characters)`,
@@ -265,7 +226,6 @@ function validateSubject(
     });
   }
 
-  // Check max length
   if (subject.length > config.format.subject_max_length) {
     errors.push({
       message: `Subject too long (${subject.length} characters)`,
@@ -273,7 +233,6 @@ function validateSubject(
     });
   }
 
-  // Check prohibited words (case-insensitive)
   const lowerSubject = subject.toLowerCase();
   const foundWords: string[] = [];
   for (const word of config.validation.prohibited_words) {
@@ -318,7 +277,8 @@ export async function promptSubject(
     return providedMessage;
   }
 
-  let subject: string | symbol = initialSubject || "";
+  let subject: string | typeof import("../../ui/types.js").CANCEL_SYMBOL =
+    initialSubject || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -334,16 +294,15 @@ export async function promptSubject(
       console.log();
     }
 
-    subject = await text({
-      message: `${label("subject", "cyan")}  ${textColors.pureWhite(
-        `Enter commit subject (max ${config.format.subject_max_length} chars):`,
-      )}`,
+    subject = await ui.text({
+      label: "subject",
+      labelColor: "cyan",
+      message: `Enter commit subject (max ${config.format.subject_max_length} chars):`,
       placeholder: "",
       initialValue: typeof subject === "string" ? subject : initialSubject,
       validate: (value) => {
         const validationErrors = validateSubject(config, value);
         if (validationErrors.length > 0) {
-          // Return first error message for inline display
           const firstError = validationErrors[0];
           let message = firstError.message;
           if (firstError.context) {
@@ -355,7 +314,10 @@ export async function promptSubject(
       },
     });
 
-    handleCancel(subject);
+    if (ui.isCancel(subject)) {
+      console.log("\nCommit cancelled.");
+      process.exit(0);
+    }
 
     if (typeof subject === "string") {
       errors = validateSubject(config, subject);
@@ -375,7 +337,6 @@ function validateBody(
   const errors: ValidationError[] = [];
   const bodyConfig = config.format.body;
 
-  // Check required
   if (bodyConfig.required && !body) {
     errors.push({
       message: "Body is required",
@@ -384,12 +345,10 @@ function validateBody(
     return errors;
   }
 
-  // Skip other checks if body is empty and not required
   if (!body) {
     return errors;
   }
 
-  // Check min length
   if (body.length < bodyConfig.min_length) {
     errors.push({
       message: `Body too short (${body.length} characters)`,
@@ -397,7 +356,6 @@ function validateBody(
     });
   }
 
-  // Check max length
   if (bodyConfig.max_length !== null && body.length > bodyConfig.max_length) {
     errors.push({
       message: `Body too long (${body.length} characters)`,
@@ -405,7 +363,6 @@ function validateBody(
     });
   }
 
-  // Check prohibited words (case-insensitive)
   const lowerBody = body.toLowerCase();
   const foundWords: string[] = [];
   for (const word of config.validation.prohibited_words_body) {
@@ -423,6 +380,7 @@ function validateBody(
 
   return errors;
 }
+
 /**
  * Prompt for body input with editor support
  */
@@ -434,8 +392,6 @@ export async function promptBody(
   const bodyConfig = config.format.body;
   const editorAvailable = detectEditor() !== null;
   const preference = bodyConfig.editor_preference;
-
-  // Explicitly check if body is required (handle potential type coercion)
   const isRequired = bodyConfig.required === true;
 
   // If body provided via CLI flag, validate it
@@ -464,19 +420,15 @@ export async function promptBody(
       `${attention("⚠")} ${attention("Editor not available, using inline input")}`,
     );
     console.log();
-    // Fall through to inline input
   } else if (preference === "editor" && editorAvailable && !isRequired) {
-    // Optional body with editor preference - use editor directly
     const edited = await promptBodyWithEditor(config, initialBody || "");
     return edited || undefined;
   } else if (preference === "editor" && editorAvailable && isRequired) {
-    // Required body with editor preference - use editor with validation loop
     return await promptBodyRequiredWithEditor(config, initialBody);
   }
 
   // Inline input path
   if (!isRequired) {
-    // Optional body - offer choice if editor available and preference allows
     if (editorAvailable && preference === "auto") {
       const bodyOptions = [
         { value: "inline", label: "Type inline (single/multi-line)" },
@@ -495,7 +447,7 @@ export async function promptBody(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(
+        const optionLabel = formatLabelWithShortcut(
           option.label,
           shortcut,
           displayHints,
@@ -503,34 +455,38 @@ export async function promptBody(
 
         return {
           value: option.value,
-          label,
+          label: optionLabel,
         };
       });
 
-      const inputMethod = await selectWithShortcuts(
-        {
-          message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
-          options,
-        },
-        shortcutMapping,
-      );
+      const inputMethod = await ui.select({
+        label: "body",
+        labelColor: "yellow",
+        message: "Enter commit body (optional):",
+        options,
+        shortcuts: shortcutMapping,
+      });
 
-      handleCancel(inputMethod);
+      if (ui.isCancel(inputMethod)) {
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
 
       if (inputMethod === "skip") {
         return undefined;
       } else if (inputMethod === "editor") {
         return await promptBodyWithEditor(config, initialBody || "");
       }
-      // Fall through to inline
     }
 
-    const body = await text({
-      message: `${label("body", "yellow")}  ${textColors.pureWhite("Enter commit body (optional):")}`,
+    const body = await ui.text({
+      label: "body",
+      labelColor: "yellow",
+      message: "Enter commit body (optional):",
       placeholder: "Press Enter to skip",
       initialValue: initialBody,
       validate: (value) => {
-        if (!value) return undefined; // Empty is OK if optional
+        if (!value) return undefined;
         const errors = validateBody(config, value);
         if (errors.length > 0) {
           return errors[0].message;
@@ -539,12 +495,16 @@ export async function promptBody(
       },
     });
 
-    handleCancel(body);
+    if (ui.isCancel(body)) {
+      console.log("\nCommit cancelled.");
+      process.exit(0);
+    }
     return body ? (body as string) : undefined;
   }
 
   // Required body
-  let body: string | symbol = initialBody || "";
+  let body: string | typeof import("../../ui/types.js").CANCEL_SYMBOL =
+    initialBody || "";
   let errors: ValidationError[] = [];
 
   do {
@@ -560,7 +520,6 @@ export async function promptBody(
       console.log();
     }
 
-    // For required body, offer editor option if available and preference allows
     if (editorAvailable && (preference === "auto" || preference === "inline")) {
       const bodyOptions = [
         { value: "inline", label: "Type inline" },
@@ -578,7 +537,7 @@ export async function promptBody(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(
+        const optionLabel = formatLabelWithShortcut(
           option.label,
           shortcut,
           displayHints,
@@ -586,21 +545,22 @@ export async function promptBody(
 
         return {
           value: option.value,
-          label,
+          label: optionLabel,
         };
       });
 
-      const inputMethod = await selectWithShortcuts(
-        {
-          message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-          )}`,
-          options,
-        },
-        shortcutMapping,
-      );
+      const inputMethod = await ui.select({
+        label: "body",
+        labelColor: "yellow",
+        message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
+        options,
+        shortcuts: shortcutMapping,
+      });
 
-      handleCancel(inputMethod);
+      if (ui.isCancel(inputMethod)) {
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
 
       if (inputMethod === "editor") {
         const editorBody = await promptBodyWithEditor(
@@ -610,15 +570,13 @@ export async function promptBody(
         if (editorBody !== null && editorBody !== undefined) {
           body = editorBody;
         } else {
-          // Editor cancelled or failed, continue loop
           continue;
         }
       } else {
-        // Inline input
-        body = await text({
-          message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-          )}`,
+        body = await ui.text({
+          label: "body",
+          labelColor: "yellow",
+          message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           placeholder: "",
           initialValue: typeof body === "string" ? body : initialBody,
           validate: (value) => {
@@ -630,14 +588,16 @@ export async function promptBody(
           },
         });
 
-        handleCancel(body);
+        if (ui.isCancel(body)) {
+          console.log("\nCommit cancelled.");
+          process.exit(0);
+        }
       }
     } else {
-      // No editor choice, just inline
-      body = await text({
-        message: `${label("body", "yellow")}  ${textColors.pureWhite(
-          `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-        )}`,
+      body = await ui.text({
+        label: "body",
+        labelColor: "yellow",
+        message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         placeholder: "",
         initialValue: typeof body === "string" ? body : initialBody,
         validate: (value) => {
@@ -649,7 +609,10 @@ export async function promptBody(
         },
       });
 
-      handleCancel(body);
+      if (ui.isCancel(body)) {
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
     }
 
     if (typeof body === "string") {
@@ -686,7 +649,6 @@ async function promptBodyRequiredWithEditor(
 
     const edited = await promptBodyWithEditor(config, body);
     if (edited === null || edited === undefined) {
-      // Editor cancelled, ask what to do
       const bodyRetryOptions = [
         { value: "retry", label: "Try editor again" },
         { value: "inline", label: "Switch to inline input" },
@@ -704,7 +666,7 @@ async function promptBodyRequiredWithEditor(
         const shortcut = shortcutMapping
           ? getShortcutForValue(option.value, shortcutMapping)
           : undefined;
-        const label = formatLabelWithShortcut(
+        const optionLabel = formatLabelWithShortcut(
           option.label,
           shortcut,
           displayHints,
@@ -712,29 +674,31 @@ async function promptBodyRequiredWithEditor(
 
         return {
           value: option.value,
-          label,
+          label: optionLabel,
         };
       });
 
-      const choice = await selectWithShortcuts(
-        {
-          message: `${label("body", "yellow")}  ${textColors.pureWhite("Editor cancelled. What would you like to do?")}`,
-          options,
-        },
-        shortcutMapping,
-      );
+      const choice = await ui.select({
+        label: "body",
+        labelColor: "yellow",
+        message: "Editor cancelled. What would you like to do?",
+        options,
+        shortcuts: shortcutMapping,
+      });
 
-      handleCancel(choice);
+      if (ui.isCancel(choice)) {
+        console.log("\nCommit cancelled.");
+        process.exit(0);
+      }
 
       if (choice === "cancel") {
         console.log("\nCommit cancelled.");
         process.exit(0);
       } else if (choice === "inline") {
-        // Fall back to inline for required body
-        const inlineBody = await text({
-          message: `${label("body", "yellow")}  ${textColors.pureWhite(
-            `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
-          )}`,
+        const inlineBody = await ui.text({
+          label: "body",
+          labelColor: "yellow",
+          message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
           placeholder: "",
           initialValue: body,
           validate: (value) => {
@@ -746,14 +710,16 @@ async function promptBodyRequiredWithEditor(
           },
         });
 
-        handleCancel(inlineBody);
+        if (ui.isCancel(inlineBody)) {
+          console.log("\nCommit cancelled.");
+          process.exit(0);
+        }
         if (typeof inlineBody === "string") {
           body = inlineBody;
           errors = validateBody(config, body);
         }
-        break; // Exit loop after inline input
+        break;
       }
-      // Otherwise continue loop (retry editor)
       continue;
     }
 
@@ -778,14 +744,12 @@ async function promptBodyWithEditor(
   const edited = editInEditor(initialContent);
 
   if (edited === null) {
-    // Editor failed or was cancelled
     console.log();
     console.log("⚠ Editor cancelled or unavailable, returning to prompts");
     console.log();
     return undefined;
   }
 
-  // Validate the edited content
   const errors = validateBody(config, edited);
   if (errors.length > 0) {
     console.log();
@@ -798,7 +762,6 @@ async function promptBodyWithEditor(
     }
     console.log();
 
-    // Ask if user wants to re-edit or go back to inline
     const bodyValidationOptions = [
       { value: "re-edit", label: "Edit again" },
       { value: "inline", label: "Type inline instead" },
@@ -816,7 +779,7 @@ async function promptBodyWithEditor(
       const shortcut = shortcutMapping
         ? getShortcutForValue(option.value, shortcutMapping)
         : undefined;
-      const label = formatLabelWithShortcut(
+      const optionLabel = formatLabelWithShortcut(
         option.label,
         shortcut,
         displayHints,
@@ -824,19 +787,22 @@ async function promptBodyWithEditor(
 
       return {
         value: option.value,
-        label,
+        label: optionLabel,
       };
     });
 
-    const choice = await selectWithShortcuts(
-      {
-        message: `${label("body", "yellow")}  ${textColors.pureWhite("Validation failed. What would you like to do?")}`,
-        options,
-      },
-      shortcutMapping,
-    );
+    const choice = await ui.select({
+      label: "body",
+      labelColor: "yellow",
+      message: "Validation failed. What would you like to do?",
+      options,
+      shortcuts: shortcutMapping,
+    });
 
-    handleCancel(choice);
+    if (ui.isCancel(choice)) {
+      console.log("\nCommit cancelled.");
+      process.exit(0);
+    }
 
     if (choice === "cancel") {
       console.log("\nCommit cancelled.");
@@ -844,7 +810,6 @@ async function promptBodyWithEditor(
     } else if (choice === "re-edit") {
       return await promptBodyWithEditor(config, edited);
     } else {
-      // Return undefined to trigger inline prompt
       return undefined;
     }
   }
@@ -853,27 +818,16 @@ async function promptBodyWithEditor(
 }
 
 /**
- * Render a line with connector (│) character at the start
- * Maintains visual consistency with @clack/prompts connector lines
- */
-function renderWithConnector(content: string): string {
-  return `│  ${content}`;
-}
-
-/**
- * Display staged files verification with connector line support
- * Uses @clack/prompts log.info() to start connector, then manually
- * renders connector lines for multi-line content, and ends with
- * a confirmation prompt to maintain visual continuity.
+ * Display staged files verification
  */
 export async function displayStagedFiles(status: {
-  alreadyStaged: Array<{
+  alreadyStaged: ReadonlyArray<{
     path: string;
     status: string;
     additions?: number;
     deletions?: number;
   }>;
-  newlyStaged: Array<{
+  newlyStaged: ReadonlyArray<{
     path: string;
     status: string;
     additions?: number;
@@ -881,23 +835,24 @@ export async function displayStagedFiles(status: {
   }>;
   totalStaged: number;
 }): Promise<void> {
-  // Start connector line using @clack/prompts
-  log.info(
-    `${label("files", "green")}  ${textColors.pureWhite(
-      `Files to be committed (${status.totalStaged} file${status.totalStaged !== 1 ? "s" : ""}):`,
-    )}`,
+  ui.section(
+    "files",
+    "green",
+    `Files to be committed (${status.totalStaged} file${status.totalStaged !== 1 ? "s" : ""}):`,
   );
 
-  // Group files by status
   const groupByStatus = (
-    files: Array<{
+    files: ReadonlyArray<{
       path: string;
       status: string;
       additions?: number;
       deletions?: number;
     }>,
   ) => {
-    const groups: Record<string, typeof files> = {
+    const groups: Record<
+      string,
+      typeof files extends ReadonlyArray<infer U> ? U[] : never
+    > = {
       M: [],
       A: [],
       D: [],
@@ -930,7 +885,7 @@ export async function displayStagedFiles(status: {
     return `      (${parts.join(" ")} lines)`;
   };
 
-  const formatStatusName = (status: string) => {
+  const formatStatusName = (statusStr: string) => {
     const map: Record<string, string> = {
       M: "Modified",
       A: "Added",
@@ -938,91 +893,70 @@ export async function displayStagedFiles(status: {
       R: "Renamed",
       C: "Copied",
     };
-    return map[status] || status;
+    return map[statusStr] || statusStr;
   };
 
-  /**
-   * Color code git status indicator to match git's default colors
-   */
-  const colorStatusCode = (status: string): string => {
-    switch (status) {
+  const colorStatusCode = (statusStr: string): string => {
+    switch (statusStr) {
       case "A":
-        return textColors.gitAdded(status);
+        return textColors.gitAdded(statusStr);
       case "M":
-        return textColors.gitModified(status);
+        return textColors.gitModified(statusStr);
       case "D":
-        return textColors.gitDeleted(status);
+        return textColors.gitDeleted(statusStr);
       case "R":
-        return textColors.gitRenamed(status);
+        return textColors.gitRenamed(statusStr);
       case "C":
-        return textColors.gitCopied(status);
+        return textColors.gitCopied(statusStr);
       default:
-        return status;
+        return statusStr;
     }
   };
 
-  // Render content with connector lines
-  // Empty line after header
-  console.log(renderWithConnector(""));
+  ui.blank();
 
   // Show already staged if any
   if (status.alreadyStaged.length > 0) {
     const alreadyPlural = status.alreadyStaged.length !== 1 ? "s" : "";
-    console.log(
-      renderWithConnector(
-        textColors.brightCyan(
-          `Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`,
-        ),
+    ui.indented(
+      textColors.brightCyan(
+        `Already staged (${status.alreadyStaged.length} file${alreadyPlural}):`,
       ),
     );
     const groups = groupByStatus(status.alreadyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(
-          renderWithConnector(
-            `    ${formatStatusName(statusCode)} (${files.length}):`,
-          ),
-        );
+        ui.indented(`    ${formatStatusName(statusCode)} (${files.length}):`);
         for (const file of files) {
-          console.log(
-            renderWithConnector(
-              `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
-            ),
+          ui.indented(
+            `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
           );
         }
       }
     }
-    console.log(renderWithConnector(""));
+    ui.blank();
   }
 
   // Show newly staged if any
   if (status.newlyStaged.length > 0) {
     const newlyPlural = status.newlyStaged.length !== 1 ? "s" : "";
-    console.log(
-      renderWithConnector(
-        textColors.brightYellow(
-          `Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`,
-        ),
+    ui.indented(
+      textColors.brightYellow(
+        `Auto-staged (${status.newlyStaged.length} file${newlyPlural}):`,
       ),
     );
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(
-          renderWithConnector(
-            `    ${formatStatusName(statusCode)} (${files.length}):`,
-          ),
-        );
+        ui.indented(`    ${formatStatusName(statusCode)} (${files.length}):`);
         for (const file of files) {
-          console.log(
-            renderWithConnector(
-              `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
-            ),
+          ui.indented(
+            `      ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
           );
         }
       }
     }
-    console.log(renderWithConnector(""));
+    ui.blank();
   }
 
   // If no separation needed, show all together
@@ -1030,30 +964,23 @@ export async function displayStagedFiles(status: {
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
-        console.log(
-          renderWithConnector(
-            `  ${formatStatusName(statusCode)} (${files.length}):`,
-          ),
-        );
+        ui.indented(`  ${formatStatusName(statusCode)} (${files.length}):`);
         for (const file of files) {
-          console.log(
-            renderWithConnector(
-              `    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
-            ),
+          ui.indented(
+            `    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
           );
         }
       }
     }
-    console.log(renderWithConnector(""));
+    ui.blank();
   }
 
-  // Separator line with connector
-  console.log(
-    renderWithConnector("─────────────────────────────────────────────"),
-  );
+  ui.divider();
 
-  // Use select prompt for confirmation (maintains connector continuity)
-  const confirmation = await select({
+  // Simple keypress wait instead of single-option select hack
+  const confirmation = await ui.select({
+    label: "files",
+    labelColor: "green",
     message: "Press Enter to continue, Esc to cancel",
     options: [
       {
@@ -1063,20 +990,21 @@ export async function displayStagedFiles(status: {
     ],
   });
 
-  handleCancel(confirmation);
+  if (ui.isCancel(confirmation)) {
+    console.log("\nCommit cancelled.");
+    process.exit(0);
+  }
 }
 
 /**
- * Display commit message preview with connector line support
- * Uses @clack/prompts log.info() to start connector, then manually
- * renders connector lines for multi-line preview content.
- * Returns the action the user selected: "commit", "edit-type", "edit-scope", "edit-subject", "edit-body", or "cancel"
+ * Display commit message preview
+ * Returns the action the user selected
  */
 export async function displayPreview(
   formattedMessage: string,
   body: string | undefined,
   config?: LabcommitrConfig,
-  emojiModeActive: boolean = true,
+  _emojiModeActive: boolean = true,
 ): Promise<
   | "commit"
   | "edit-type"
@@ -1085,35 +1013,23 @@ export async function displayPreview(
   | "edit-body"
   | "cancel"
 > {
-  // Preview shows the actual commit message as it will be stored in Git
-  // We don't strip emojis here because the user needs to see what will be committed
-  // even if their terminal doesn't support emoji display
   const displayMessage = formattedMessage;
   const displayBody = body;
 
-  // Start connector line using @clack/prompts
-  log.info(
-    `${label("preview", "green")}  ${textColors.pureWhite("Commit message preview:")}`,
-  );
-
-  // Render content with connector lines
-  // Empty line after header
-  console.log(renderWithConnector(""));
-  console.log(renderWithConnector(textColors.brightCyan(displayMessage)));
+  ui.section("preview", "green", "Commit message preview:");
+  ui.blank();
+  ui.indented(textColors.brightCyan(displayMessage));
 
   if (displayBody) {
-    console.log(renderWithConnector(""));
+    ui.blank();
     const bodyLines = displayBody.split("\n");
-    for (const line of bodyLines) {
-      console.log(renderWithConnector(textColors.white(line)));
+    for (const bodyLine of bodyLines) {
+      ui.indented(textColors.white(bodyLine));
     }
   }
 
-  console.log(renderWithConnector(""));
-  // Separator line with connector
-  console.log(
-    renderWithConnector("─────────────────────────────────────────────"),
-  );
+  ui.blank();
+  ui.divider();
 
   // Process shortcuts for preview prompt
   const previewOptions = [
@@ -1131,28 +1047,34 @@ export async function displayPreview(
 
   const displayHints = config?.advanced.shortcuts?.display_hints ?? true;
 
-  // Build options with shortcuts
   const options = previewOptions.map((option) => {
     const shortcut = shortcutMapping
       ? getShortcutForValue(option.value, shortcutMapping)
       : undefined;
-    const label = formatLabelWithShortcut(option.label, shortcut, displayHints);
+    const optionLabel = formatLabelWithShortcut(
+      option.label,
+      shortcut,
+      displayHints,
+    );
 
     return {
       value: option.value,
-      label,
+      label: optionLabel,
     };
   });
 
-  const action = await selectWithShortcuts(
-    {
-      message: `${success("✓")} ${textColors.pureWhite("Ready to commit?")}`,
-      options,
-    },
-    shortcutMapping,
-  );
+  const action = await ui.select({
+    label: "action",
+    labelColor: "green",
+    message: "Ready to commit?",
+    options,
+    shortcuts: shortcutMapping,
+  });
 
-  handleCancel(action);
+  if (ui.isCancel(action)) {
+    console.log("\nCommit cancelled.");
+    process.exit(0);
+  }
   return action as
     | "commit"
     | "edit-type"

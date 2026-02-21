@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "@changesets/cli": "^2.29.7",
-    "@clack/prompts": "^0.11.0",
     "@types/node": "^24.3.3",
     "boxen": "^8.0.1",
     "commander": "^14.0.2",
@@ -64,6 +63,7 @@
     "dist/cli/commands/preview",
     "dist/cli/commands/revert",
     "dist/cli/commands/shared",
+    "dist/cli/ui",
     "dist/cli/utils",
     "dist/lib",
     "README.md",

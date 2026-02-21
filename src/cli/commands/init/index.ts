@@ -22,8 +22,19 @@ import {
   promptEmoji,
   promptAutoStage,
   promptBodyRequired,
+  promptSignCommits,
+  promptGpgSetup,
+  promptKeyGeneration,
+  displayGpgStatus,
+  displayInstallInstructions,
   displayProcessingSteps,
 } from "./prompts.js";
+import {
+  detectGpgCapabilities,
+  detectPackageManager,
+  configureGitSigning,
+  generateGpgKey,
+} from "./gpg.js";
 import { buildConfig, getPreset } from "../../../lib/presets/index.js";
 import { generateConfigFile } from "./config-generator.js";
 import { Logger } from "../../../lib/logger.js";
@@ -99,13 +110,72 @@ async function initAction(options: {
     // Screen is now completely clear
 
     // Prompts: Clean labels, no cat
-    // Note: @clack/prompts clears each prompt after selection (their default behavior)
+    // Note: Prompts collapse to single line after selection
     const presetId = options.preset || (await promptPreset());
     getPreset(presetId);
 
     const emojiEnabled = await promptEmoji();
     const autoStage = await promptAutoStage();
     const bodyRequired = await promptBodyRequired();
+
+    // === GPG Detection Phase ===
+    const gpgCapabilities = detectGpgCapabilities();
+    let signCommits = false;
+
+    // Display current GPG status (returns line count for compaction)
+    const gpgStatusLines = displayGpgStatus(gpgCapabilities);
+
+    switch (gpgCapabilities.state) {
+      case "fully_configured": {
+        // User has working GPG - ask if they want to enable
+        signCommits = await promptSignCommits(
+          gpgCapabilities.state,
+          gpgStatusLines,
+        );
+        break;
+      }
+
+      case "partial_config": {
+        // GPG and keys exist, just need Git config
+        const configure = await promptSignCommits(
+          gpgCapabilities.state,
+          gpgStatusLines,
+        );
+        if (configure && gpgCapabilities.keyId) {
+          configureGitSigning(gpgCapabilities.keyId);
+          signCommits = true;
+        }
+        break;
+      }
+
+      case "no_keys": {
+        // GPG installed but no keys
+        const action = await promptKeyGeneration(gpgStatusLines);
+        if (action === "generate") {
+          const success = await generateGpgKey();
+          if (success) {
+            // Re-detect after key generation
+            const updated = detectGpgCapabilities();
+            if (updated.keyId) {
+              configureGitSigning(updated.keyId);
+              signCommits = true;
+            }
+          }
+        }
+        break;
+      }
+
+      case "not_installed": {
+        // GPG not found
+        const platformInfo = detectPackageManager();
+        const action = await promptGpgSetup(platformInfo, gpgStatusLines);
+        if (action === "install") {
+          displayInstallInstructions(platformInfo);
+          // signCommits stays false - user will re-run init after installing
+        }
+        break;
+      }
+    }
 
     // Small pause before processing
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -119,6 +189,7 @@ async function initAction(options: {
       scope: "optional",
       autoStage,
       bodyRequired,
+      signCommits,
     });
 
     // Show title "Labcommitr initializing..."
