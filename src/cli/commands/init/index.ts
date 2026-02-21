@@ -122,19 +122,25 @@ async function initAction(options: {
     const gpgCapabilities = detectGpgCapabilities();
     let signCommits = false;
 
-    // Display current GPG status
-    displayGpgStatus(gpgCapabilities);
+    // Display current GPG status (returns line count for compaction)
+    const gpgStatusLines = displayGpgStatus(gpgCapabilities);
 
     switch (gpgCapabilities.state) {
       case "fully_configured": {
         // User has working GPG - ask if they want to enable
-        signCommits = await promptSignCommits(gpgCapabilities.state);
+        signCommits = await promptSignCommits(
+          gpgCapabilities.state,
+          gpgStatusLines,
+        );
         break;
       }
 
       case "partial_config": {
         // GPG and keys exist, just need Git config
-        const configure = await promptSignCommits(gpgCapabilities.state);
+        const configure = await promptSignCommits(
+          gpgCapabilities.state,
+          gpgStatusLines,
+        );
         if (configure && gpgCapabilities.keyId) {
           configureGitSigning(gpgCapabilities.keyId);
           signCommits = true;
@@ -144,7 +150,7 @@ async function initAction(options: {
 
       case "no_keys": {
         // GPG installed but no keys
-        const action = await promptKeyGeneration();
+        const action = await promptKeyGeneration(gpgStatusLines);
         if (action === "generate") {
           const success = await generateGpgKey();
           if (success) {
@@ -162,7 +168,7 @@ async function initAction(options: {
       case "not_installed": {
         // GPG not found
         const platformInfo = detectPackageManager();
-        const action = await promptGpgSetup(platformInfo);
+        const action = await promptGpgSetup(platformInfo, gpgStatusLines);
         if (action === "install") {
           displayInstallInstructions(platformInfo);
           // signCommits stays false - user will re-run init after installing
