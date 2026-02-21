@@ -110,7 +110,7 @@ async function initAction(options: {
     // Screen is now completely clear
 
     // Prompts: Clean labels, no cat
-    // Note: @clack/prompts clears each prompt after selection (their default behavior)
+    // Note: Prompts collapse to single line after selection
     const presetId = options.preset || (await promptPreset());
     getPreset(presetId);
 

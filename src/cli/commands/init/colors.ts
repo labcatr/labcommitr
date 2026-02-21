@@ -82,6 +82,18 @@ export const textColors = {
   labelBlue: (text: string) => `\x1b[38;5;75m${text}\x1b[0m`,
 
   /**
+   * Tuxedo Cat Colors - For Clef's tuxedo pattern
+   */
+  // Dark grey (visible on dark terminals) - ears outer, body sides, legs
+  tuxBlack: (text: string) => `\x1b[38;5;236m${text}\x1b[0m`,
+  // Near-white for bib/face
+  tuxWhite: (text: string) => `\x1b[38;5;255m${text}\x1b[0m`,
+  // Pink for nose (^)
+  tuxPink: (text: string) => `\x1b[38;5;218m${text}\x1b[0m`,
+  // Green for eyes (o)
+  tuxGreen: (text: string) => `\x1b[38;5;120m${text}\x1b[0m`,
+
+  /**
    * Git Status Colors - Match git's default color scheme
    */
   // Added (A) - Green (success, positive)
