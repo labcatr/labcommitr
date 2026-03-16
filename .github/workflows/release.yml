@@ -1,3 +1,9 @@
+# Release workflow: versions via changesets and publishes to npm.
+#
+# If publish fails with E404 or "Access token expired or revoked":
+# 1. Ensure npm organization "labcatr" exists (npmjs.com) and the publishing user can publish there.
+# 2. Create a new npm token (Profile → Access Tokens) and set GitHub secret NPM_AUTH_TOKEN to it.
+#    Disable "2FA for package publishing" on npm if using a classic token for CI.
 name: Release
 
 on:
@@ -50,7 +56,5 @@ jobs:
           commit: "[ci] release"
           title: "[ci] release"
         env:
-          # Uses built-in GITHUB_TOKEN (automatically available, no secret needed)
           GITHUB_TOKEN: ${{ secrets.LAB_ACTIONS_TOKEN }}
-          # Needs access to publish to npm
           NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
