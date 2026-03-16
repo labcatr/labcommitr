@@ -460,7 +460,7 @@ export async function promptBody(
       });
 
       const inputMethod = await ui.select({
-        label: "body",
+        label: "input",
         labelColor: "yellow",
         message: "Enter commit body (optional):",
         options,
@@ -550,7 +550,7 @@ export async function promptBody(
       });
 
       const inputMethod = await ui.select({
-        label: "body",
+        label: "input",
         labelColor: "yellow",
         message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         options,
@@ -1017,18 +1017,15 @@ export async function displayPreview(
   const displayBody = body;
 
   ui.section("preview", "green", "Commit message preview:");
-  ui.blank();
   ui.indented(textColors.brightCyan(displayMessage));
 
   if (displayBody) {
-    ui.blank();
     const bodyLines = displayBody.split("\n");
     for (const bodyLine of bodyLines) {
       ui.indented(textColors.white(bodyLine));
     }
   }
 
-  ui.blank();
   ui.divider();
 
   // Process shortcuts for preview prompt
@@ -1075,6 +1072,10 @@ export async function displayPreview(
     console.log("\nCommit cancelled.");
     process.exit(0);
   }
+
+  // Trailing spacing after the action prompt for visual separation
+  ui.blank();
+
   return action as
     | "commit"
     | "edit-type"
