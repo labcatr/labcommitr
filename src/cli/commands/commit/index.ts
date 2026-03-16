@@ -417,30 +417,39 @@ export async function commitAction(options: {
       const gitStatus = getGitStatus(alreadyStagedFiles);
       await displayStagedFiles(gitStatus);
 
-      // Show what's provided vs missing (helpful context)
-      if (requiredCheck.provided.length > 0) {
-        console.log();
-        console.log("Provided:");
-        requiredCheck.provided.forEach((field) => {
-          const value =
-            field === "type"
-              ? options.type
-              : field === "scope"
-                ? options.scope
-                : field === "subject"
-                  ? options.message
-                  : "";
-          console.log(`  • ${field}: ${value}`);
-        });
-      }
+      // Show provided/missing context ONLY when partial CLI params were given.
+      // Pure interactive mode (no params) skips this — the prompts speak for themselves.
+      const hasAnyCliParam =
+        options.type !== undefined ||
+        options.scope !== undefined ||
+        options.message !== undefined ||
+        options.body !== undefined;
 
-      if (requiredCheck.missing.length > 0) {
-        console.log();
-        console.log("Missing required fields:");
-        requiredCheck.missing.forEach((field) => {
-          console.log(`  • ${field}`);
-        });
-        console.log();
+      if (hasAnyCliParam) {
+        if (requiredCheck.provided.length > 0) {
+          console.log();
+          console.log("Provided:");
+          requiredCheck.provided.forEach((field) => {
+            const value =
+              field === "type"
+                ? options.type
+                : field === "scope"
+                  ? options.scope
+                  : field === "subject"
+                    ? options.message
+                    : "";
+            console.log(`  • ${field}: ${value}`);
+          });
+        }
+
+        if (requiredCheck.missing.length > 0) {
+          console.log();
+          console.log("Missing required fields:");
+          requiredCheck.missing.forEach((field) => {
+            console.log(`  • ${field}`);
+          });
+          console.log();
+        }
       }
 
       // Use same flow as interactive, but skip provided fields
