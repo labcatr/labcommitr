@@ -19,10 +19,16 @@ import { isGitRepository } from "./git.js";
 import {
   stageAllTrackedFiles,
   hasStagedFiles,
+  getStagedFiles,
+  getUnstagedTrackedFiles,
+  hasUntrackedFiles,
   getGitStatus,
   createCommit,
   unstageFiles,
+  stageFiles,
 } from "./git.js";
+import { promptFilePicker } from "./file-picker.js";
+import { ui } from "../../ui/index.js";
 import {
   promptType,
   promptScope,
@@ -211,98 +217,79 @@ export async function commitAction(options: {
     // Get already staged files (before we do anything)
     if (autoStageEnabled) {
       // Check what's already staged
-      const { execSync } = await import("child_process");
-      try {
-        const stagedOutput = execSync("git diff --cached --name-only", {
-          encoding: "utf-8",
-        }).trim();
-        alreadyStagedFiles = stagedOutput
-          ? stagedOutput.split("\n").filter((f) => f.trim())
-          : [];
-      } catch {
-        alreadyStagedFiles = [];
-      }
+      alreadyStagedFiles = getStagedFiles();
 
       // Check if there are unstaged tracked files
-      try {
-        const unstagedOutput = execSync("git diff --name-only", {
-          encoding: "utf-8",
-        }).trim();
-        const hasUnstagedTracked = unstagedOutput.length > 0;
+      const unstagedFiles = getUnstagedTrackedFiles();
+      const hasUnstagedTracked = unstagedFiles.length > 0;
 
-        if (!hasUnstagedTracked && alreadyStagedFiles.length === 0) {
-          // Check for untracked files
-          try {
-            const untrackedOutput = execSync(
-              "git ls-files --others --exclude-standard",
-              { encoding: "utf-8" },
-            ).trim();
-            const hasUntracked = untrackedOutput.length > 0;
-
-            if (hasUntracked) {
-              console.error("\n⚠ No tracked files to stage");
-              console.error(
-                "\n  Only untracked files exist. Stage them manually with 'git add <file>'\n",
-              );
-              process.exit(1);
-            } else {
-              console.error("\n⚠ No modified files to stage");
-              console.error(
-                "\n  All files are already committed or there are no changes.",
-              );
-              console.error("  Nothing to commit.\n");
-              process.exit(1);
-            }
-          } catch {
-            console.error("\n⚠ No modified files to stage");
-            console.error(
-              "\n  All files are already committed or there are no changes.",
-            );
-            console.error("  Nothing to commit.\n");
-            process.exit(1);
-          }
-          return;
+      if (!hasUnstagedTracked && alreadyStagedFiles.length === 0) {
+        // Nothing tracked to stage — check for untracked files
+        if (hasUntrackedFiles()) {
+          console.error("\n⚠ No tracked files to stage");
+          console.error(
+            "\n  Only untracked files exist. Stage them manually with 'git add <file>'\n",
+          );
+          process.exit(1);
+        } else {
+          console.error("\n⚠ No modified files to stage");
+          console.error(
+            "\n  All files are already committed or there are no changes.",
+          );
+          console.error("  Nothing to commit.\n");
+          process.exit(1);
         }
+        return;
+      }
 
-        // Stage remaining files
-        if (hasUnstagedTracked) {
-          console.log("◐ Staging files...");
-          if (alreadyStagedFiles.length > 0) {
-            console.log(
-              `  Found ${alreadyStagedFiles.length} file${alreadyStagedFiles.length !== 1 ? "s" : ""} already staged, ${unstagedOutput.split("\n").filter((f) => f.trim()).length} file${unstagedOutput.split("\n").filter((f) => f.trim()).length !== 1 ? "s" : ""} unstaged`,
-            );
-          }
-          newlyStagedFiles = stageAllTrackedFiles();
+      // Stage remaining files
+      if (hasUnstagedTracked) {
+        console.log("◐ Staging files...");
+        if (alreadyStagedFiles.length > 0) {
           console.log(
-            `✓ Staged ${newlyStagedFiles.length} file${newlyStagedFiles.length !== 1 ? "s" : ""}${alreadyStagedFiles.length > 0 ? " (preserved existing staging)" : ""}`,
+            `  Found ${alreadyStagedFiles.length} file${alreadyStagedFiles.length !== 1 ? "s" : ""} already staged, ${unstagedFiles.length} file${unstagedFiles.length !== 1 ? "s" : ""} unstaged`,
           );
         }
-      } catch {
-        // Error getting unstaged files, continue
+        newlyStagedFiles = stageAllTrackedFiles();
+        console.log(
+          `✓ Staged ${newlyStagedFiles.length} file${newlyStagedFiles.length !== 1 ? "s" : ""}${alreadyStagedFiles.length > 0 ? " (preserved existing staging)" : ""}`,
+        );
       }
     } else {
       // auto_stage: false - check if anything is staged
       if (!hasStagedFiles()) {
-        console.error("\n✗ Error: No files staged for commit");
-        console.error("\n  Nothing has been staged. Please stage files first:");
-        console.error("    • Use 'git add <file>' to stage specific files");
-        console.error("    • Use 'git add -u' to stage all modified files");
-        console.error("    • Or enable auto_stage in your config\n");
-        process.exit(1);
+        // No files staged — offer file picker or cancel
+        clearTerminal();
+
+        const noStagedAction = await ui.select({
+          label: "files",
+          labelColor: "green",
+          message: "No files staged for commit",
+          options: [
+            { value: "select", label: "Select files to commit" },
+            { value: "cancel", label: "Cancel" },
+          ],
+        });
+
+        if (ui.isCancel(noStagedAction) || noStagedAction === "cancel") {
+          console.log("\nCommit cancelled.");
+          process.exit(0);
+        }
+
+        // Show interactive file picker
+        const selectedFiles = await promptFilePicker(config);
+        if (ui.isCancel(selectedFiles)) {
+          console.log("\nCommit cancelled.");
+          process.exit(0);
+        }
+
+        // Stage selected files
+        stageFiles(selectedFiles as ReadonlyArray<string>);
+        newlyStagedFiles = [...(selectedFiles as ReadonlyArray<string>)];
       }
 
       // Get already staged files for tracking
-      const { execSync } = await import("child_process");
-      try {
-        const stagedOutput = execSync("git diff --cached --name-only", {
-          encoding: "utf-8",
-        }).trim();
-        alreadyStagedFiles = stagedOutput
-          ? stagedOutput.split("\n").filter((f) => f.trim())
-          : [];
-      } catch {
-        alreadyStagedFiles = [];
-      }
+      alreadyStagedFiles = getStagedFiles();
     }
 
     // Step 4: Check if all required fields are provided
@@ -413,9 +400,36 @@ export async function commitAction(options: {
       // Clear terminal for clean interactive prompt display
       clearTerminal();
 
-      // Step 4: Display staged files verification and wait for confirmation
-      const gitStatus = getGitStatus(alreadyStagedFiles);
-      await displayStagedFiles(gitStatus);
+      // Step 4: Display staged files verification with edit-files loop
+      let previousSelections = [...alreadyStagedFiles, ...newlyStagedFiles];
+      let fileAction: "continue" | "edit-files";
+
+      do {
+        const gitStatus = getGitStatus(alreadyStagedFiles);
+        fileAction = await displayStagedFiles(gitStatus);
+
+        if (fileAction === "edit-files") {
+          // Unstage everything so the picker sees them as changed files
+          const allStaged = [...alreadyStagedFiles, ...newlyStagedFiles];
+          unstageFiles(allStaged);
+
+          // Re-show picker with previous selections preserved
+          const reselected = await promptFilePicker(config, previousSelections);
+          if (ui.isCancel(reselected)) {
+            console.log("\nCommit cancelled.");
+            process.exit(0);
+          }
+
+          // Stage new selections
+          stageFiles(reselected as ReadonlyArray<string>);
+          newlyStagedFiles = [...(reselected as ReadonlyArray<string>)];
+          alreadyStagedFiles = [];
+          previousSelections = [...(reselected as ReadonlyArray<string>)];
+
+          // Clear terminal for clean re-display
+          clearTerminal();
+        }
+      } while (fileAction === "edit-files");
 
       // Show provided/missing context ONLY when partial CLI params were given.
       // Pure interactive mode (no params) skips this — the prompts speak for themselves.
