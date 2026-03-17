@@ -1,9 +1,10 @@
 # Release workflow: versions via changesets and publishes to npm.
 #
-# If publish fails with E404 or "Access token expired or revoked":
-# 1. Ensure npm organization "labcatr" exists (npmjs.com) and the publishing user can publish there.
-# 2. Create a new npm token (Profile → Access Tokens) and set GitHub secret NPM_AUTH_TOKEN to it.
-#    Disable "2FA for package publishing" on npm if using a classic token for CI.
+# Uses OIDC trusted publishing — no long-lived npm tokens needed.
+# Requires trusted publisher configured on npmjs.org:
+#   https://www.npmjs.com/package/@labcatr/labcommitr/access
+#   → Trusted Publisher → GitHub Actions
+#   → Organization: labcatr, Repository: labcommitr, Workflow: release.yml
 name: Release
 
 on:
@@ -22,23 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      actions: write
       contents: write
       pull-requests: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: latest 
+          version: latest
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install
@@ -46,15 +47,27 @@ jobs:
       - name: Build Packages
         run: pnpm run build
 
-      - name: Create Release Pull Request or Publish
+      # Versioning only — publish is handled separately via OIDC
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@v1
         with:
-          # Note: pnpm install after versioning is necessary to refresh lockfile
           version: pnpm run version
-          publish: pnpm exec changeset publish
           commit: "[ci] release"
           title: "[ci] release"
         env:
           GITHUB_TOKEN: ${{ secrets.LAB_ACTIONS_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+      # Publish via OIDC trusted publishing (no npm token required)
+      - name: Publish to npm
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          npm install -g npm@latest
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view @labcatr/labcommitr version 2>/dev/null || echo "")
+          if [ "$CURRENT_VERSION" != "$PUBLISHED" ]; then
+            echo "Publishing @labcatr/labcommitr@${CURRENT_VERSION}"
+            npm publish --provenance --access public
+          else
+            echo "Version ${CURRENT_VERSION} already published, skipping."
+          fi
