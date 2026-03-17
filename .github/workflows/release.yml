@@ -58,8 +58,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Publish via OIDC trusted publishing (no npm token required)
+      # Publish via OIDC trusted publishing (no npm token required).
+      # Only runs when changesets have already been consumed (version PR merged).
       - name: Publish to npm
+        id: publish
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
           npm install -g npm@latest
@@ -68,6 +70,27 @@ jobs:
           if [ "$CURRENT_VERSION" != "$PUBLISHED" ]; then
             echo "Publishing @labcatr/labcommitr@${CURRENT_VERSION}"
             npm publish --provenance --access public
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
           else
             echo "Version ${CURRENT_VERSION} already published, skipping."
+            echo "published=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Create GitHub Release
+        if: steps.publish.outputs.published == 'true'
+        run: |
+          VERSION="v${{ steps.publish.outputs.version }}"
+          CHANGELOG=""
+          if [ -f CHANGELOG.md ]; then
+            CHANGELOG=$(awk '/^## '"${VERSION#v}"'/{found=1; next} /^## [0-9]/{if(found) exit} found{print}' CHANGELOG.md)
+          fi
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="Release ${VERSION}"
+          fi
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes "$CHANGELOG" \
+            --target "${{ github.sha }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
