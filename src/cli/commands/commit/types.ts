@@ -39,6 +39,22 @@ export interface GitStatus {
 }
 
 /**
+ * Changed (unstaged/untracked) file information for the file picker
+ */
+export interface ChangedFileInfo {
+  /** File path relative to repo root */
+  path: string;
+  /** Git status code: M (modified), A (added), D (deleted), R (renamed), C (copied) */
+  status: "M" | "A" | "D" | "R" | "C";
+  /** Lines added (undefined if unknown) */
+  additions?: number;
+  /** Lines deleted (undefined if unknown) */
+  deletions?: number;
+  /** Whether this file is untracked (not yet known to git) */
+  isUntracked: boolean;
+}
+
+/**
  * Commit state throughout the workflow
  */
 export interface CommitState {

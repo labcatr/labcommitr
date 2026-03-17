@@ -11,7 +11,7 @@
 
 import { execSync, spawnSync } from "child_process";
 import { Logger } from "../../../lib/logger.js";
-import type { StagedFileInfo, GitStatus } from "./types.js";
+import type { StagedFileInfo, GitStatus, ChangedFileInfo } from "./types.js";
 
 /**
  * Execute git command and return stdout
@@ -58,9 +58,9 @@ export function isGitRepository(): boolean {
 }
 
 /**
- * Get staged files (files already staged before auto-stage)
+ * Get staged file paths (names only, no status info)
  */
-function getStagedFiles(): string[] {
+export function getStagedFiles(): string[] {
   try {
     const output = execGit(["diff", "--cached", "--name-only"]);
     return output ? output.split("\n").filter((f) => f.trim()) : [];
@@ -72,7 +72,7 @@ function getStagedFiles(): string[] {
 /**
  * Get unstaged tracked files (modified/deleted)
  */
-function getUnstagedTrackedFiles(): string[] {
+export function getUnstagedTrackedFiles(): string[] {
   try {
     const output = execGit(["diff", "--name-only"]);
     return output ? output.split("\n").filter((f) => f.trim()) : [];
@@ -84,7 +84,7 @@ function getUnstagedTrackedFiles(): string[] {
 /**
  * Check if there are untracked files
  */
-function hasUntrackedFiles(): boolean {
+export function hasUntrackedFiles(): boolean {
   try {
     const output = execGit(["ls-files", "--others", "--exclude-standard"]);
     return output.trim().length > 0;
@@ -291,4 +291,125 @@ export function createCommit(
 export function unstageFiles(files: string[]): void {
   if (files.length === 0) return;
   execGit(["reset", "HEAD", "--", ...files]);
+}
+
+/**
+ * Stage specific files
+ */
+export function stageFiles(files: ReadonlyArray<string>): void {
+  if (files.length === 0) return;
+  execGit(["add", "--", ...files]);
+}
+
+/**
+ * Get all changed files (unstaged tracked + untracked)
+ * Returns file info suitable for the interactive file picker.
+ */
+export function getChangedFiles(): ChangedFileInfo[] {
+  const files: ChangedFileInfo[] = [];
+
+  // 1. Unstaged tracked files (modified, deleted, renamed, copied)
+  try {
+    const statusOutput = execGit(["diff", "--name-status"]);
+    const statsOutput = execGit(["diff", "--numstat", "--format="]);
+
+    const statsMap = new Map<string, { additions: number; deletions: number }>();
+    if (statsOutput) {
+      for (const line of statsOutput.split("\n").filter((l) => l.trim())) {
+        const parts = line.split(/\s+/);
+        if (parts.length >= 3) {
+          const additions = parseInt(parts[0], 10) || 0;
+          const deletions = parseInt(parts[1], 10) || 0;
+          const path = parts.slice(2).join(" ");
+          statsMap.set(path, { additions, deletions });
+        }
+      }
+    }
+
+    if (statusOutput) {
+      for (const line of statusOutput.split("\n").filter((l) => l.trim())) {
+        let match = line.match(/^([MAD])\s+(.+)$/);
+        let statusCode: string;
+        let path: string;
+
+        if (match) {
+          [, statusCode, path] = match;
+        } else {
+          match = line.match(/^([RC])(?:\d+)?\s+(.+)\t(.+)$/);
+          if (match) {
+            [, statusCode, , path] = match;
+          } else {
+            continue;
+          }
+        }
+
+        const stats = statsMap.get(path);
+        let status: ChangedFileInfo["status"] = "M";
+        if (statusCode === "A") status = "A";
+        else if (statusCode === "D") status = "D";
+        else if (statusCode === "R") status = "R";
+        else if (statusCode === "C") status = "C";
+
+        files.push({
+          path,
+          status,
+          additions: stats?.additions,
+          deletions: stats?.deletions,
+          isUntracked: false,
+        });
+      }
+    }
+  } catch {
+    // Continue with whatever we have
+  }
+
+  // 2. Untracked files
+  try {
+    const untrackedOutput = execGit([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+    ]);
+    if (untrackedOutput) {
+      for (const path of untrackedOutput.split("\n").filter((l) => l.trim())) {
+        files.push({
+          path,
+          status: "A",
+          isUntracked: true,
+        });
+      }
+    }
+  } catch {
+    // Continue with whatever we have
+  }
+
+  // Sort by path for consistent display
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/**
+ * Get diff output for a single file.
+ * For tracked files: working tree vs index.
+ * For untracked files: shows entire file as additions.
+ *
+ * Note: Uses /dev/null for untracked diffs (Unix/macOS only).
+ * Windows is not a supported platform for this CLI.
+ */
+export function getFileDiff(filePath: string, isUntracked: boolean): string {
+  try {
+    if (isUntracked) {
+      // Untracked file: diff against empty (exit code 1 is expected)
+      const result = spawnSync(
+        "git",
+        ["diff", "--no-index", "--color=always", "--", "/dev/null", filePath],
+        { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] },
+      );
+      // --no-index returns exit code 1 when files differ (expected)
+      return result.stdout?.toString().trim() || "(empty file)";
+    }
+
+    return execGit(["diff", "--color=always", "--", filePath]) || "(no changes)";
+  } catch {
+    return "(unable to generate diff)";
+  }
 }
