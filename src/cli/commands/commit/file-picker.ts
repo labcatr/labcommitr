@@ -228,9 +228,7 @@ export async function promptFilePicker(
     console.log(
       `\n${textColors.brightYellow("No modified or untracked files found.")}`,
     );
-    console.log(
-      "  All files are already committed or there are no changes.\n",
-    );
+    console.log("  All files are already committed or there are no changes.\n");
     return CANCEL_SYMBOL;
   }
 
@@ -239,12 +237,8 @@ export async function promptFilePicker(
     console.log(
       `\n${textColors.brightYellow(`Too many changed files (${files.length}).`)}`,
     );
-    console.log(
-      `  The file picker supports up to ${MAX_FILES} files.`,
-    );
-    console.log(
-      "  Please stage files manually with 'git add <file>' first.\n",
-    );
+    console.log(`  The file picker supports up to ${MAX_FILES} files.`);
+    console.log("  Please stage files manually with 'git add <file>' first.\n");
     return CANCEL_SYMBOL;
   }
 
@@ -456,7 +450,9 @@ function runPickerSession(
         hints.push(
           `${textColors.brightCyan("Esc")} ${textColors.white("to cancel search")}`,
         );
-        lines.push(`${indent}  ${textColors.white("Press")} ${hints.join(", ")}`);
+        lines.push(
+          `${indent}  ${textColors.white("Press")} ${hints.join(", ")}`,
+        );
       } else {
         const hints: string[] = [];
         hints.push(
@@ -479,7 +475,9 @@ function runPickerSession(
         hints.push(
           `${textColors.brightCyan("Enter")} ${textColors.white("to submit")}`,
         );
-        lines.push(`${indent}  ${textColors.white("Press")} ${hints.join(", ")}`);
+        lines.push(
+          `${indent}  ${textColors.white("Press")} ${hints.join(", ")}`,
+        );
       }
 
       // Error line
@@ -537,7 +535,10 @@ function runPickerSession(
           filteredIndices.push(i);
         }
       }
-      filteredCursor = Math.min(filteredCursor, Math.max(0, filteredIndices.length - 1));
+      filteredCursor = Math.min(
+        filteredCursor,
+        Math.max(0, filteredIndices.length - 1),
+      );
     };
 
     const onKeypress = (_char: string | undefined, key: readline.Key) => {
@@ -581,16 +582,18 @@ function runPickerSession(
 
         // Navigate filtered list
         if (key.name === "up") {
-          filteredCursor = filteredCursor <= 0
-            ? Math.max(0, filteredIndices.length - 1)
-            : filteredCursor - 1;
+          filteredCursor =
+            filteredCursor <= 0
+              ? Math.max(0, filteredIndices.length - 1)
+              : filteredCursor - 1;
           render();
           return;
         }
         if (key.name === "down") {
-          filteredCursor = filteredCursor >= filteredIndices.length - 1
-            ? 0
-            : filteredCursor + 1;
+          filteredCursor =
+            filteredCursor >= filteredIndices.length - 1
+              ? 0
+              : filteredCursor + 1;
           render();
           return;
         }
@@ -669,7 +672,10 @@ function runPickerSession(
       }
 
       if (key.name === "down" || key.name === "j") {
-        const pageEnd = Math.min((currentPage + 1) * PAGE_SIZE - 1, files.length - 1);
+        const pageEnd = Math.min(
+          (currentPage + 1) * PAGE_SIZE - 1,
+          files.length - 1,
+        );
         if (cursorIndex >= pageEnd) {
           // At bottom of page — go to next page or wrap
           if (currentPage < totalPages - 1) {

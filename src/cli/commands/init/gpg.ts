@@ -157,7 +157,10 @@ function commandExists(command: string): boolean {
 /**
  * Detect GPG installation and version
  */
-function detectGpgInstallation(): { installed: boolean; version: string | null } {
+function detectGpgInstallation(): {
+  installed: boolean;
+  version: string | null;
+} {
   const result = execCommand("gpg", ["--version"]);
 
   if (!result.success) {
