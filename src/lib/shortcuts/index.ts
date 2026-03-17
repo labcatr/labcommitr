@@ -25,6 +25,9 @@ export interface ShortcutsConfigInput {
     body?: {
       mapping?: Record<string, string>;
     };
+    files?: {
+      mapping?: Record<string, string>;
+    };
   };
 }
 
@@ -38,7 +41,7 @@ export interface ShortcutsConfigInput {
  */
 export function processShortcuts(
   config: ShortcutsConfigInput | undefined,
-  promptName: "type" | "preview" | "body",
+  promptName: "type" | "preview" | "body" | "files",
   options: Array<{ value: string; label: string }>,
 ): ShortcutMapping | null {
   // Shortcuts disabled or not configured
