@@ -7,7 +7,10 @@
  */
 
 import { label as renderLabel, spacing, symbols } from "./theme.js";
-import { textColors, success as successColor } from "../commands/init/colors.js";
+import {
+  textColors,
+  success as successColor,
+} from "../commands/init/colors.js";
 import type { LabelColor } from "./types.js";
 
 /**
@@ -33,9 +36,7 @@ export const status = {
   },
   error: (msg: string) => {
     const indent = " ".repeat(spacing.optionIndent);
-    console.log(
-      `${indent}${textColors.gitDeleted(symbols.cross)} ${msg}`,
-    );
+    console.log(`${indent}${textColors.gitDeleted(symbols.cross)} ${msg}`);
   },
   info: (msg: string) => {
     const indent = " ".repeat(spacing.optionIndent);
@@ -55,9 +56,7 @@ export function blank(): void {
  */
 export function divider(): void {
   const indent = " ".repeat(spacing.optionIndent);
-  console.log(
-    `${indent}${"─".repeat(45)}`,
-  );
+  console.log(`${indent}${"─".repeat(45)}`);
 }
 
 /**

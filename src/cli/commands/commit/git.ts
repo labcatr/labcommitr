@@ -313,7 +313,10 @@ export function getChangedFiles(): ChangedFileInfo[] {
     const statusOutput = execGit(["diff", "--name-status"]);
     const statsOutput = execGit(["diff", "--numstat", "--format="]);
 
-    const statsMap = new Map<string, { additions: number; deletions: number }>();
+    const statsMap = new Map<
+      string,
+      { additions: number; deletions: number }
+    >();
     if (statsOutput) {
       for (const line of statsOutput.split("\n").filter((l) => l.trim())) {
         const parts = line.split(/\s+/);
@@ -408,7 +411,9 @@ export function getFileDiff(filePath: string, isUntracked: boolean): string {
       return result.stdout?.toString().trim() || "(empty file)";
     }
 
-    return execGit(["diff", "--color=always", "--", filePath]) || "(no changes)";
+    return (
+      execGit(["diff", "--color=always", "--", filePath]) || "(no changes)"
+    );
   } catch {
     return "(unable to generate diff)";
   }

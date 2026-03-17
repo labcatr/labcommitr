@@ -1,5 +1,19 @@
 # @labcatr/labcommitr
 
+## 0.6.0
+
+### Minor Changes
+
+- b689fd1: Add interactive file picker for selecting files to commit directly from the CLI
+
+### Patch Changes
+
+- 8e26ad4: Update UI color palette to cool-toned theme with improved contrast
+- 90d4c7f: Fix double body label, reduce preview spacing, and add trailing blank after action prompt
+- be0a56f: Only show missing required fields message when partial CLI parameters are provided
+- 78000f1: Fix terminal ghost lines when prompt content wraps at terminal width
+- 9eba33c: Fix terminal resize ghost lines by storing physical line count at render time
+
 ## 0.4.2
 
 ### Patch Changes

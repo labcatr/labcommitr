@@ -119,10 +119,7 @@ export function enterRawMode(): { cleanup: () => void } {
  * measuring each logical line's visible width (stripping ANSI codes)
  * and dividing by the terminal column count.
  */
-export function countPhysicalLines(
-  content: string,
-  columns?: number,
-): number {
+export function countPhysicalLines(content: string, columns?: number): number {
   const cols = columns ?? (process.stdout.columns || 80);
   return content.split("\n").reduce((total, logicalLine) => {
     const visibleLength = stripVTControlCharacters(logicalLine).length;

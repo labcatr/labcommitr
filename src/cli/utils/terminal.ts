@@ -21,10 +21,7 @@ export function getAvailableWidth(reservedRight: number = 0): number {
  * Truncate a string to fit terminal width, accounting for ANSI codes.
  * Strips ANSI for measurement, truncates visible text, preserves structure.
  */
-export function truncateForPrompt(
-  text: string,
-  maxWidth: number,
-): string {
+export function truncateForPrompt(text: string, maxWidth: number): string {
   const visible = stripVTControlCharacters(text);
   if (visible.length <= maxWidth) return text;
 
