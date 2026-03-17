@@ -28,7 +28,10 @@
     "cli",
     "npmtool"
   ],
-  "repository": "https://github.com/labcatr/labcommitr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/labcatr/labcommitr.git"
+  },
   "homepage": "https://github.com/labcatr/labcommitr#readme",
   "author": "Trevor Fox",
   "license": "ISC",
