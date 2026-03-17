@@ -378,6 +378,13 @@ pnpm run dev:cli test status
 
 See [`TESTING.md`](TESTING.md) for complete testing documentation.
 
+### Publishing (maintainers)
+
+Releases run on push to `main` via `.github/workflows/release.yml` and publish to npm. If publish fails with **E404** or **"Access token expired or revoked"**:
+
+1. **npm organization** – The scope `@labcatr` must exist on npm. Create an organization named `labcatr` at [npmjs.com](https://www.npmjs.com/) and ensure the publishing user can publish there.
+2. **GitHub secret** – Create a new npm token (npm Profile → Access Tokens). In the repo set **Settings → Secrets and variables → Actions** → `NPM_AUTH_TOKEN` to that token. If 2FA is required for publishing, use a token type that supports it or temporarily disable 2FA for package publish.
+
 ---
 
 ## Contributing

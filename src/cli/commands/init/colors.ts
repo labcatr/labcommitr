@@ -1,35 +1,35 @@
 /**
  * Custom Color Palette
  *
- * Provides bright, energetic colors using ANSI 256-color codes
- * for a modern, high-contrast CLI experience.
+ * Provides cool-toned, high-contrast colors using ANSI 256-color codes
+ * for a modern, professional CLI experience.
  *
  * Design Philosophy:
- * - Vibrant but readable
- * - Positive energy with warm, inviting tones
- * - High contrast for easy scanning
- * - Consistent visual hierarchy
+ * - Cool-toned palette (indigo, teal, navy, slate, jade)
+ * - Deep, saturated backgrounds for excellent white text contrast
+ * - WCAG AA+ contrast ratios with bright white foreground
+ * - Visually distinct labels for easy scanning
  */
 
 /**
  * Distinct background colors for step labels
  * Each label uses a unique ANSI 256-color for visual distinction.
- * Text is bright white (97m) for readability on deeper backgrounds.
+ * Text is bright white (97m) for readability on deep backgrounds.
  *
- * | Name    | ANSI 256 | Hex     | Used by  |
- * |---------|----------|---------|----------|
- * | magenta | 134      | #af5fd7 | preset   |
- * | cyan    | 37       | #00afaf | emoji    |
- * | blue    | 33       | #0087ff | signing  |
- * | yellow  | 172      | #d78700 | stage    |
- * | green   | 35       | #00af5f | body     |
+ * | Name    | ANSI 256 | Hex     | Description    |
+ * |---------|----------|---------|----------------|
+ * | magenta | 55       | #5f00af | Deep Indigo    |
+ * | cyan    | 30       | #008787 | Deep Teal      |
+ * | blue    | 25       | #005faf | Deep Navy      |
+ * | yellow  | 61       | #5f5faf | Slate Blue     |
+ * | green   | 29       | #00875f | Deep Jade      |
  */
 export const labelColors = {
-  bgBrightMagenta: (text: string) => `\x1b[48;5;134m\x1b[97m${text}\x1b[0m`,
-  bgBrightCyan: (text: string) => `\x1b[48;5;37m\x1b[97m${text}\x1b[0m`,
-  bgBrightBlue: (text: string) => `\x1b[48;5;33m\x1b[97m${text}\x1b[0m`,
-  bgBrightYellow: (text: string) => `\x1b[48;5;172m\x1b[97m${text}\x1b[0m`,
-  bgBrightGreen: (text: string) => `\x1b[48;5;35m\x1b[97m${text}\x1b[0m`,
+  bgBrightMagenta: (text: string) => `\x1b[48;5;55m\x1b[97m${text}\x1b[0m`,
+  bgBrightCyan: (text: string) => `\x1b[48;5;30m\x1b[97m${text}\x1b[0m`,
+  bgBrightBlue: (text: string) => `\x1b[48;5;25m\x1b[97m${text}\x1b[0m`,
+  bgBrightYellow: (text: string) => `\x1b[48;5;61m\x1b[97m${text}\x1b[0m`,
+  bgBrightGreen: (text: string) => `\x1b[48;5;29m\x1b[97m${text}\x1b[0m`,
 };
 
 /**
@@ -98,22 +98,30 @@ export const textColors = {
   tuxGreen: (text: string) => `\x1b[38;5;120m${text}\x1b[0m`,
 
   /**
-   * Git Status Colors - Match git's default color scheme
+   * Git Status Colors — Cool-toned, readable on dark backgrounds
+   *
+   * | Status   | ANSI 256 | Hex     | Description      |
+   * |----------|----------|---------|------------------|
+   * | Added    | 114      | #87d787 | Cool sage green  |
+   * | Modified | 110      | #87afd7 | Steel blue       |
+   * | Deleted  | 174      | #d78787 | Muted rose       |
+   * | Renamed  | 80       | #5fd7d7 | Cool aqua        |
+   * | Copied   | 141      | #af87ff | Cool violet      |
    */
-  // Added (A) - Green (success, positive)
-  gitAdded: (text: string) => `\x1b[38;5;46m${text}\x1b[0m`, // Bright green
+  // Added (A) - Cool sage green
+  gitAdded: (text: string) => `\x1b[38;5;114m${text}\x1b[0m`,
 
-  // Modified (M) - Yellow (caution, change)
-  gitModified: (text: string) => `\x1b[38;5;226m${text}\x1b[0m`, // Bright yellow
+  // Modified (M) - Steel blue
+  gitModified: (text: string) => `\x1b[38;5;110m${text}\x1b[0m`,
 
-  // Deleted (D) - Red (danger, removal)
-  gitDeleted: (text: string) => `\x1b[38;5;196m${text}\x1b[0m`, // Bright red
+  // Deleted (D) - Muted rose
+  gitDeleted: (text: string) => `\x1b[38;5;174m${text}\x1b[0m`,
 
-  // Renamed (R) - Cyan (transformation)
-  gitRenamed: (text: string) => `\x1b[38;5;51m${text}\x1b[0m`, // Bright cyan
+  // Renamed (R) - Cool aqua
+  gitRenamed: (text: string) => `\x1b[38;5;80m${text}\x1b[0m`,
 
-  // Copied (C) - Magenta (duplication)
-  gitCopied: (text: string) => `\x1b[38;5;201m${text}\x1b[0m`, // Bright magenta
+  // Copied (C) - Cool violet
+  gitCopied: (text: string) => `\x1b[38;5;141m${text}\x1b[0m`,
 };
 
 /**

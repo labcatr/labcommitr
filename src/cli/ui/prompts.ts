@@ -21,6 +21,7 @@ import {
   enterRawMode,
   dim,
   brightCyan,
+  countPhysicalLines,
 } from "./renderer.js";
 import { textColors } from "../commands/init/colors.js";
 import { matchShortcut } from "../../lib/shortcuts/index.js";
@@ -68,13 +69,13 @@ export async function select<T>(
     readline.emitKeypressEvents(process.stdin);
     cursor.hide();
 
-    // Track how many lines we've written (for clearing)
-    let renderedLines = 0;
+    // Track physical line count at render time (not recalculated at current
+    // width) to prevent ghost lines when the terminal is resized between renders.
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      // Clear previous render
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -94,15 +95,20 @@ export async function select<T>(
 
       const output = lines.join("\n");
       process.stdout.write(output);
-      renderedLines = lines.length;
+      lastPhysicalLines = countPhysicalLines(output);
     };
+
+    // Re-render on terminal resize to recalculate physical line counts
+    const onResize = () => render();
+    process.stdout.on("resize", onResize);
 
     const finish = (value: T | typeof CANCEL_SYMBOL) => {
       process.stdin.removeListener("keypress", onKeypress);
+      process.stdout.removeListener("resize", onResize);
       rawCleanup();
 
       // Clear the active render plus any externally-written prefix lines
-      const totalClear = renderedLines + (config.prefixLineCount ?? 0);
+      const totalClear = lastPhysicalLines + (config.prefixLineCount ?? 0);
       if (totalClear > 0) {
         line.clearLines(totalClear);
       }
@@ -195,11 +201,11 @@ export async function text(
     let value = config.initialValue ?? "";
     let cursorPos = value.length;
     let error: string | undefined;
-    let renderedLines = 0;
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -225,16 +231,22 @@ export async function text(
         lines.push(`${indent}${textColors.gitDeleted(error)}`);
       }
 
-      process.stdout.write(lines.join("\n"));
-      renderedLines = lines.length;
+      const output = lines.join("\n");
+      process.stdout.write(output);
+      lastPhysicalLines = countPhysicalLines(output);
     };
+
+    // Re-render on terminal resize
+    const onResize = () => render();
+    process.stdout.on("resize", onResize);
 
     const finish = (result: string | typeof CANCEL_SYMBOL) => {
       process.stdin.removeListener("keypress", onKeypress);
+      process.stdout.removeListener("resize", onResize);
       rawCleanup();
 
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       if (result === CANCEL_SYMBOL) {
@@ -394,11 +406,11 @@ export async function multiselect<T>(
     readline.emitKeypressEvents(process.stdin);
     cursor.hide();
 
-    let renderedLines = 0;
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -419,16 +431,22 @@ export async function multiselect<T>(
       // Instruction
       lines.push(`${indent}  ${dim("Space to toggle, Enter to submit")}`);
 
-      process.stdout.write(lines.join("\n"));
-      renderedLines = lines.length;
+      const output = lines.join("\n");
+      process.stdout.write(output);
+      lastPhysicalLines = countPhysicalLines(output);
     };
+
+    // Re-render on terminal resize
+    const onResize = () => render();
+    process.stdout.on("resize", onResize);
 
     const finish = (result: ReadonlyArray<T> | typeof CANCEL_SYMBOL) => {
       process.stdin.removeListener("keypress", onKeypress);
+      process.stdout.removeListener("resize", onResize);
       rawCleanup();
 
-      if (renderedLines > 0) {
-        line.clearLines(renderedLines);
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       if (result === CANCEL_SYMBOL) {

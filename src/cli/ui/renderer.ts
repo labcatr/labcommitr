@@ -5,6 +5,8 @@
  * and ANSI escape helpers. Built on Node.js readline (no dependencies).
  */
 
+import { stripVTControlCharacters } from "node:util";
+
 /**
  * ANSI cursor control sequences
  */
@@ -106,4 +108,24 @@ export function enterRawMode(): { cleanup: () => void } {
   };
 
   return { cleanup };
+}
+
+/**
+ * Count the number of physical terminal lines a string occupies,
+ * accounting for line wrapping at terminal width.
+ *
+ * A logical line that exceeds the terminal width wraps onto additional
+ * physical lines. This function computes the true physical count by
+ * measuring each logical line's visible width (stripping ANSI codes)
+ * and dividing by the terminal column count.
+ */
+export function countPhysicalLines(
+  content: string,
+  columns?: number,
+): number {
+  const cols = columns ?? (process.stdout.columns || 80);
+  return content.split("\n").reduce((total, logicalLine) => {
+    const visibleLength = stripVTControlCharacters(logicalLine).length;
+    return total + Math.max(1, Math.ceil(visibleLength / cols));
+  }, 0);
 }

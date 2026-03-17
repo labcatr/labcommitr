@@ -460,7 +460,7 @@ export async function promptBody(
       });
 
       const inputMethod = await ui.select({
-        label: "body",
+        label: "input",
         labelColor: "yellow",
         message: "Enter commit body (optional):",
         options,
@@ -550,7 +550,7 @@ export async function promptBody(
       });
 
       const inputMethod = await ui.select({
-        label: "body",
+        label: "input",
         labelColor: "yellow",
         message: `Enter commit body (required${bodyConfig.min_length > 0 ? `, min ${bodyConfig.min_length} chars` : ""}):`,
         options,
@@ -834,7 +834,7 @@ export async function displayStagedFiles(status: {
     deletions?: number;
   }>;
   totalStaged: number;
-}): Promise<void> {
+}): Promise<"continue" | "edit-files"> {
   ui.section(
     "files",
     "green",
@@ -937,8 +937,9 @@ export async function displayStagedFiles(status: {
     ui.blank();
   }
 
-  // Show newly staged if any
-  if (status.newlyStaged.length > 0) {
+  // Show newly staged: labeled section when both exist, flat list otherwise
+  if (status.newlyStaged.length > 0 && status.alreadyStaged.length > 0) {
+    // Labeled "Auto-staged" section when separated from "Already staged"
     const newlyPlural = status.newlyStaged.length !== 1 ? "s" : "";
     ui.indented(
       textColors.brightYellow(
@@ -957,17 +958,15 @@ export async function displayStagedFiles(status: {
       }
     }
     ui.blank();
-  }
-
-  // If no separation needed, show all together
-  if (status.alreadyStaged.length === 0 && status.newlyStaged.length > 0) {
+  } else if (status.newlyStaged.length > 0) {
+    // Flat list when no separation needed (only newly-staged files)
     const groups = groupByStatus(status.newlyStaged);
     for (const [statusCode, files] of Object.entries(groups)) {
       if (files.length > 0) {
         ui.indented(`  ${formatStatusName(statusCode)} (${files.length}):`);
         for (const file of files) {
           ui.indented(
-            `    ${file.status}  ${file.path}${formatStats(file.additions, file.deletions)}`,
+            `    ${colorStatusCode(file.status)}  ${file.path}${formatStats(file.additions, file.deletions)}`,
           );
         }
       }
@@ -977,23 +976,22 @@ export async function displayStagedFiles(status: {
 
   ui.divider();
 
-  // Simple keypress wait instead of single-option select hack
-  const confirmation = await ui.select({
+  const action = await ui.select({
     label: "files",
     labelColor: "green",
-    message: "Press Enter to continue, Esc to cancel",
+    message: "Continue or edit file selection:",
     options: [
-      {
-        value: "continue",
-        label: "Continue",
-      },
+      { value: "continue", label: "Continue" },
+      { value: "edit-files", label: "Edit files", hint: "re-select" },
     ],
   });
 
-  if (ui.isCancel(confirmation)) {
+  if (ui.isCancel(action)) {
     console.log("\nCommit cancelled.");
     process.exit(0);
   }
+
+  return action as "continue" | "edit-files";
 }
 
 /**
@@ -1017,18 +1015,15 @@ export async function displayPreview(
   const displayBody = body;
 
   ui.section("preview", "green", "Commit message preview:");
-  ui.blank();
   ui.indented(textColors.brightCyan(displayMessage));
 
   if (displayBody) {
-    ui.blank();
     const bodyLines = displayBody.split("\n");
     for (const bodyLine of bodyLines) {
       ui.indented(textColors.white(bodyLine));
     }
   }
 
-  ui.blank();
   ui.divider();
 
   // Process shortcuts for preview prompt
@@ -1075,6 +1070,10 @@ export async function displayPreview(
     console.log("\nCommit cancelled.");
     process.exit(0);
   }
+
+  // Trailing spacing after the action prompt for visual separation
+  ui.blank();
+
   return action as
     | "commit"
     | "edit-type"
