@@ -69,15 +69,13 @@ export async function select<T>(
     readline.emitKeypressEvents(process.stdin);
     cursor.hide();
 
-    // Store last output string so we can recalculate physical lines
-    // at the CURRENT terminal width (critical for resize handling).
-    let lastOutput = "";
+    // Track physical line count at render time (not recalculated at current
+    // width) to prevent ghost lines when the terminal is resized between renders.
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      // Clear previous render — recalculate at current width in case
-      // the terminal was resized since the last render
-      if (lastOutput) {
-        line.clearLines(countPhysicalLines(lastOutput));
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -97,7 +95,7 @@ export async function select<T>(
 
       const output = lines.join("\n");
       process.stdout.write(output);
-      lastOutput = output;
+      lastPhysicalLines = countPhysicalLines(output);
     };
 
     // Re-render on terminal resize to recalculate physical line counts
@@ -110,10 +108,7 @@ export async function select<T>(
       rawCleanup();
 
       // Clear the active render plus any externally-written prefix lines
-      const renderedLines = lastOutput
-        ? countPhysicalLines(lastOutput)
-        : 0;
-      const totalClear = renderedLines + (config.prefixLineCount ?? 0);
+      const totalClear = lastPhysicalLines + (config.prefixLineCount ?? 0);
       if (totalClear > 0) {
         line.clearLines(totalClear);
       }
@@ -206,11 +201,11 @@ export async function text(
     let value = config.initialValue ?? "";
     let cursorPos = value.length;
     let error: string | undefined;
-    let lastOutput = "";
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      if (lastOutput) {
-        line.clearLines(countPhysicalLines(lastOutput));
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -238,10 +233,10 @@ export async function text(
 
       const output = lines.join("\n");
       process.stdout.write(output);
-      lastOutput = output;
+      lastPhysicalLines = countPhysicalLines(output);
     };
 
-    // Re-render on terminal resize to recalculate physical line counts
+    // Re-render on terminal resize
     const onResize = () => render();
     process.stdout.on("resize", onResize);
 
@@ -250,8 +245,8 @@ export async function text(
       process.stdout.removeListener("resize", onResize);
       rawCleanup();
 
-      if (lastOutput) {
-        line.clearLines(countPhysicalLines(lastOutput));
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       if (result === CANCEL_SYMBOL) {
@@ -411,11 +406,11 @@ export async function multiselect<T>(
     readline.emitKeypressEvents(process.stdin);
     cursor.hide();
 
-    let lastOutput = "";
+    let lastPhysicalLines = 0;
 
     const render = () => {
-      if (lastOutput) {
-        line.clearLines(countPhysicalLines(lastOutput));
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       const lines: string[] = [];
@@ -438,10 +433,10 @@ export async function multiselect<T>(
 
       const output = lines.join("\n");
       process.stdout.write(output);
-      lastOutput = output;
+      lastPhysicalLines = countPhysicalLines(output);
     };
 
-    // Re-render on terminal resize to recalculate physical line counts
+    // Re-render on terminal resize
     const onResize = () => render();
     process.stdout.on("resize", onResize);
 
@@ -450,8 +445,8 @@ export async function multiselect<T>(
       process.stdout.removeListener("resize", onResize);
       rawCleanup();
 
-      if (lastOutput) {
-        line.clearLines(countPhysicalLines(lastOutput));
+      if (lastPhysicalLines > 0) {
+        line.clearLines(lastPhysicalLines);
       }
 
       if (result === CANCEL_SYMBOL) {
